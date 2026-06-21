@@ -1,0 +1,1 @@
+This is a sample input file containing some numbers: 10, 20, 30.

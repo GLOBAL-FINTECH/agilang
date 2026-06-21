@@ -1,0 +1,7 @@
+fn main() -> i32:
+    let caps = mobile_runtime_capabilities()
+    let matrix = mobile_runtime_matrix()
+    print("mobile react native", caps["react_native_expo_client"])
+    print("android target", matrix["targets"]["android-arm64-v8a"]["status"])
+    print("ios target", matrix["targets"]["ios-arm64"]["status"])
+    return 0

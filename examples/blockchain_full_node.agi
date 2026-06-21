@@ -1,0 +1,14 @@
+fn main() -> i32:
+    print("AGILANG blockchain full node demo")
+    let cfg = blockchain_config(chain_id=1900, name="agilang-full-chain", validators={"alice": 60, "bob": 40}, genesis_state={"balances": {"alice": 1000, "bob": 250}}, slot_seconds=1)
+    let node = blockchain_node(cfg, ":memory:", "alice-node")
+    let tx = blockchain_transaction("alice", "bob", 25, nonce=1, gas_price=1)
+    print("submit", node.submit_tx(tx))
+    let parent = node.head()
+    let slot = parent["slot"] + 1
+    let proposer = node.consensus.select_proposer(parent["hash"], slot)
+    let produced = node.produce_and_import_block(proposer, slot)
+    print("block", produced["block"]["height"], produced["block"]["hash"])
+    print("status", node.status())
+    print("fork_choice", node.fork_choice())
+    return 0

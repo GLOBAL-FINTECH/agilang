@@ -1,0 +1,17 @@
+# Automation example: read a text file, process and write output
+
+fn main() -> i32:
+    # Write some data to a file
+    write_text("input.txt", "This is a sample input file containing some numbers: 10, 20, 30.")
+    let text = read_text("input.txt")
+    # Extract numbers from the text and compute their sum
+    let parts = text.split()  # Use Python's str.split method
+    let nums = []
+    for p in parts:
+        if p.replace(",", "").isdigit():
+            nums.append(int(p.replace(",", "")))
+    let total = sum(nums)
+    print("Numbers:", nums)
+    print("Sum:", total)
+    write_text("output.txt", f"Sum of numbers: {total}\n")
+    return 0

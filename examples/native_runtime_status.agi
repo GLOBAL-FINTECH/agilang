@@ -1,0 +1,5 @@
+fn main() -> i32:
+    let status = native_runtime_status(False)
+    print("agilang runtime", status["agilang_runtime_version"])
+    print("library", status["library_name"])
+    return 0

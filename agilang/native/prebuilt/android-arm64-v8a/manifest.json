@@ -1,0 +1,9 @@
+{
+  "platform_tag": "android-arm64-v8a",
+  "runtime_version": "1.9.3",
+  "build_host_platform": "Linux-4.4.0-x86_64-with-glibc2.41",
+  "toolchain": "Android NDK + CMake",
+  "expected_library": "libagilang_net_runtime.so",
+  "status": "manifest-only-until-mobile-toolchain-builds-artifact",
+  "notes": "Use Android NDK/Xcode CI jobs to generate the physical binary for this platform."
+}

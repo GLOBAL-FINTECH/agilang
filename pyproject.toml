@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agilang"
+version = "1.9.4"
+description = "AGILANG production EVM systems language toolkit with executable EVM interpreter, low-level networking, blockchain tooling, zero-knowledge primitives, cross-platform web/mobile/shared-hosting runtimes, C + Python integration, secure realtime, parser, AST, checker, package manager, LSP, and CI/CD."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "AGILANG Project" }]
+license = { text = "Proprietary / project owner controlled" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Compilers",
+]
+dependencies = []
+
+[project.optional-dependencies]
+data = ["numpy", "scikit-learn", "matplotlib", "requests"]
+dev = ["pytest"]
+
+[project.scripts]
+agilang = "agilang.cli:main"
+agi = "agilang.cli:main"
+
+[tool.setuptools]
+packages = ["agilang", "agilang.native"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"agilang.native" = ["*.c", "*.h", "prebuilt/*/*", "prebuilt/*/*.so", "prebuilt/*/*.dll", "prebuilt/*/*.dylib", "prebuilt/*/*.a", "prebuilt/*/*.o", "prebuilt/*/*.json", "prebuilt/*/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

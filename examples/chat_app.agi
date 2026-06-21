@@ -1,0 +1,23 @@
+# AGILANG v0.7 chat app example.
+# Demonstrates WebSocket connect, message handler, broadcast, and clean disconnect.
+
+fn main() -> i32:
+    let server = websocket_listen("127.0.0.1", 0, "/chat")
+
+    fn on_message(client, message):
+        server.broadcast(json_event("chat.message", {"text": message}, "chat"))
+
+    server.on_message(on_message)
+    server.run_background()
+
+    let alice = websocket_connect("ws://127.0.0.1:" + str(server.actual_port) + "/chat")
+    let bob = websocket_connect("ws://127.0.0.1:" + str(server.actual_port) + "/chat")
+
+    alice.send("hello from alice")
+    let event = parse_json_event(bob.receive(2.0))
+    print("chat", event["payload"]["text"])
+
+    alice.close()
+    bob.close()
+    server.stop()
+    return 0
