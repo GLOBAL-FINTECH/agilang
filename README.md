@@ -351,11 +351,10 @@ Ways to contribute:
 
 ---
 
-## License
+## License MIT 
 
-This project is released under the license selected by the repository owner.
+This project is released under the license selected by the repository owner. Designed and Developed by Izukanji Silwimba AGILAB By Izurex Enterprise Ltd Zambia 
 
-If no license is currently included, add a `LICENSE` file before public release.
 
 ---
 
