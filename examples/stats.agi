@@ -1,0 +1,15 @@
+# Compute basic statistics on a numeric CSV column
+
+# This example reads a CSV file containing a column named "value"
+# and computes the mean, median and standard deviation using the
+# builtin statistics helpers from the standard library.
+
+fn main() -> i32:
+    let rows = read_csv("data.csv")
+    # Extract the "value" column from each row (skip rows without it)
+    let values = [row["value"] for row in rows if row["value"] is not None]
+    print("Count:", len(values))
+    print("Mean:", mean(values))
+    print("Median:", median(values))
+    print("Stddev:", stddev(values))
+    return 0

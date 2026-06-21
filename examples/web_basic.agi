@@ -1,0 +1,21 @@
+fn create_app():
+    let app = web_app("agilang-web", False)
+
+    fn home(request):
+        return html_response(render_template("<h1>{{ title }}</h1><p>{{ message }}</p>", {"title": "AGILANG Web", "message": "HTTP routing works"}))
+
+    fn profile(request):
+        return json_response({"id": request.params["id"], "active": request.query.get("active", "0")})
+
+    app.get("/", home, name="home")
+    app.get("/users/<id>", profile, name="profile")
+    return app
+
+fn main() -> i32:
+    let app = create_app()
+    let server = app.listen("127.0.0.1", 0)
+    server.run_background()
+    print(web_get(server.url + "/"))
+    print(web_get(server.url + "/users/42?active=1"))
+    server.stop()
+    return 0

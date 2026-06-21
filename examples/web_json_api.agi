@@ -1,0 +1,25 @@
+fn create_app():
+    let app = web_app("json-api", False)
+    let transactions = []
+
+    fn health(request):
+        return json_response({"status": "ok", "service": "agilang-json-api"})
+
+    fn create_transaction(request):
+        let payload = request.json({})
+        let txn = {"id": "txn_001", "amount": payload.get("amount", 0), "status": "accepted"}
+        transactions.append(txn)
+        return json_response(txn, 201)
+
+    app.get("/health", health)
+    app.post("/transactions", create_transaction)
+    return app
+
+fn main() -> i32:
+    let app = create_app()
+    let server = app.listen("127.0.0.1", 0)
+    server.run_background()
+    print(web_get(server.url + "/health"))
+    print(web_post_json(server.url + "/transactions", {"amount": 125.50}))
+    server.stop()
+    return 0

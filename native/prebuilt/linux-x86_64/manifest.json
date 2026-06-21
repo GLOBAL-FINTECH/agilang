@@ -1,0 +1,35 @@
+{
+  "platform_tag": "linux-x86_64",
+  "compiler": "/usr/bin/gcc",
+  "build_host_platform": "Linux-4.4.0-x86_64-with-glibc2.41",
+  "artifacts": {
+    "agilang_net_runtime.o": {
+      "size_bytes": 15504,
+      "sha256": "5d2606fb1935a9b558bc00106dd1978445c164604f5ea443789ff09a96d4d037"
+    },
+    "libagilang_net_runtime.a": {
+      "size_bytes": 15992,
+      "sha256": "9257875d8b37d585567fa5854d9fa06451db7bdbf1fb97f4426074ce833c62b6"
+    },
+    "libagilang_net_runtime.so": {
+      "size_bytes": 21832,
+      "sha256": "b62b22d7ba576b90130c12b37514d0f4b128997b6cb779720bb70e6521c1accf"
+    }
+  },
+  "runtime_version": "AGILANG native net runtime 1.9.3",
+  "selftest": true,
+  "capabilities": {
+    "runtime": "agilang-native-c",
+    "version": "1.9.3",
+    "http": true,
+    "websocket": true,
+    "sha1": true,
+    "base64": true,
+    "broadcast": true,
+    "ping_pong": true,
+    "origin_guard": true,
+    "token_guard": true,
+    "max_frame_limit": true,
+    "mobile_bridge": true
+  }
+}

@@ -1,0 +1,22 @@
+# AGILANG v0.7 fintech transaction live-update example.
+# Demonstrates transaction status events for dashboards, merchant panels, and POS terminals.
+
+fn main() -> i32:
+    let server = websocket_listen("127.0.0.1", 0, "/payments")
+    server.run_background()
+
+    let dashboard = websocket_connect("ws://127.0.0.1:" + str(server.actual_port) + "/payments")
+
+    server.publish("merchant.txn", {
+        "reference": "AGI-TXN-1001",
+        "amount": 250.75,
+        "currency": "ZMW",
+        "status": "approved"
+    })
+
+    let event = parse_json_event(dashboard.receive(2.0))
+    print("fintech", event["topic"], event["payload"]["status"], event["payload"]["currency"])
+
+    dashboard.close()
+    server.stop()
+    return 0

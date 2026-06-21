@@ -1,0 +1,12 @@
+# Backend side for the generated React web/mobile app.
+
+fn main() -> i32:
+    let ws = websocket_listen("127.0.0.1", 9000, "/realtime")
+
+    fn on_message(client, message):
+        ws.broadcast(json_event("client.echo", {"message": message}, "dashboard"))
+
+    ws.on_message(on_message)
+    print("AGILANG realtime backend on ws://127.0.0.1:9000/realtime")
+    ws.serve_forever()
+    return 0

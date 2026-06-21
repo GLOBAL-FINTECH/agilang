@@ -1,0 +1,7 @@
+fn main() -> i32:
+    let runtime = agilab_web_runtime("hybrid")
+    let caps = runtime.capabilities()
+    print("hybrid mode", caps["mode"])
+    print("python http", caps["python_http"])
+    print("c websocket", caps["c_websocket"])
+    return 0

@@ -1,0 +1,15 @@
+{
+  "name": "agilang-vscode",
+  "displayName": "AGILANG",
+  "description": "Syntax highlighting and LSP wiring for AGILANG.",
+  "version": "0.6.0",
+  "publisher": "agilang",
+  "engines": {"vscode": "^1.85.0"},
+  "categories": ["Programming Languages"],
+  "activationEvents": ["onLanguage:agilang"],
+  "contributes": {
+    "languages": [{"id": "agilang", "aliases": ["AGILANG", "agi"], "extensions": [".agi"], "configuration": "./language-configuration.json"}],
+    "grammars": [{"language": "agilang", "scopeName": "source.agilang", "path": "./syntaxes/agilang.tmLanguage.json"}]
+  },
+  "main": "./extension.js"
+}

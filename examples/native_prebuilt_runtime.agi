@@ -1,0 +1,5 @@
+fn main() -> i32:
+    let status = native_prebuilt_status()
+    print("platform", status["platform_tag"])
+    print("library", status["bundled_library"])
+    return 0

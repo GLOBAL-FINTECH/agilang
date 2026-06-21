@@ -1,0 +1,20 @@
+fn main() -> i32:
+    print("AGILANG zero-knowledge capabilities", zk_capabilities())
+
+    let circuit = zk_circuit("square_demo")
+    circuit.var("secret", 9, public=False)
+    circuit.var("square", 81, public=True)
+    circuit.assert_mul("secret", "secret", "square")
+    let checked = circuit.check()
+    print("circuit ok", checked["ok"])
+
+    let commitment = zk_commit({"amount": 2500}, "example-salt")
+    print("commitment verified", zk_verify_commitment(commitment, {"amount": 2500}))
+
+    let proof = zk_merkle_proof(["alice", "bob", "carol"], 1)
+    print("merkle verified", zk_verify_merkle_proof("bob", proof["index"], proof["proof"], proof["root"]))
+
+    let key = zk_schnorr_keypair(12345)
+    let schnorr = zk_schnorr_prove(key["secret"], "agilang-v1.7")
+    print("schnorr verified", zk_schnorr_verify(schnorr, "agilang-v1.7"))
+    return 0

@@ -1,0 +1,24 @@
+fn main() -> i32:
+    let ws = websocket_listen("127.0.0.1", 0, "/updates")
+    ws.run_background()
+
+    let app = web_app("fintech-live", False)
+
+    fn create_transaction(request):
+        let payload = request.json({})
+        let event = json_event("transaction.created", {"reference": payload.get("reference", "TXN-001"), "amount": payload.get("amount", 0), "status": "approved"}, "merchant.transactions")
+        ws.broadcast(event)
+        return json_response({"queued": True, "event": parse_json_event(event)})
+
+    app.post("/api/transactions", create_transaction)
+    let http = app.listen("127.0.0.1", 0)
+    http.run_background()
+
+    let client = websocket_connect("ws://127.0.0.1:" + str(ws.actual_port) + "/updates")
+    print(web_post_json(http.url + "/api/transactions", {"reference": "AGI-900", "amount": 250.75}))
+    print(client.receive(2.0))
+
+    client.close()
+    http.stop()
+    ws.stop()
+    return 0

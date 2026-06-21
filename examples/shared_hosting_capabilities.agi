@@ -1,0 +1,5 @@
+fn main() -> i32:
+    let caps = shared_hosting_capabilities()
+    print("classic_cgi", caps["classic_cgi"])
+    print("cpanel_public_html", caps["cpanel_public_html_scaffold"])
+    return 0

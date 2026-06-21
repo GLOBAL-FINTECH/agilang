@@ -1,0 +1,11 @@
+{
+  "scopeName": "source.agilang",
+  "patterns": [
+    {"name": "comment.line.number-sign.agilang", "match": "#.*$"},
+    {"name": "keyword.control.agilang", "match": "\\b(fn|pub|export|let|const|struct|enum|type|return|if|elif|else|for|while|in|import)\\b"},
+    {"name": "storage.type.agilang", "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|str|string|bool|void|any)\\b"},
+    {"name": "constant.numeric.agilang", "match": "\\b[0-9]+(\\.[0-9]+)?\\b"},
+    {"name": "string.quoted.double.agilang", "begin": "\"", "end": "\""},
+    {"name": "string.quoted.single.agilang", "begin": "'", "end": "'"}
+  ]
+}

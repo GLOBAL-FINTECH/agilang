@@ -1,0 +1,6 @@
+recursive-include agilang/native *.c *.h
+recursive-include agilang/native/prebuilt *
+recursive-include native *.c *.h
+recursive-include docs *.md
+recursive-include deployment *.md
+recursive-include examples *.agi *.txt *.csv *.db

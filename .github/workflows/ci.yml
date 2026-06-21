@@ -1,0 +1,31 @@
+name: AGILANG CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package
+        run: python -m pip install -e .[dev]
+      - name: Unit tests
+        run: python -m pytest -q
+      - name: Static check examples
+        run: agilang check examples
+      - name: Generate C backend sample
+        run: agilang to-c examples/native_hello.agi -o build/native_hello.c
+      - name: Native build sample
+        if: runner.os != 'Windows'
+        run: agilang native-build examples/native_hello.agi -o build/native_hello
