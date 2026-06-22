@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AGILANG Documentation</title>
+  <meta name="description" content="AGILANG programming language and runtime documentation for web apps, AGS templates, CLI tools, CMS starter kits, and blockchain generators.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="#top">AGILANG</a>
+    <nav>
+      <a href="#language">Language</a>
+      <a href="#quickstart">Quick Start</a>
+      <a href="#apps">Apps</a>
+      <a href="#blockchain">Blockchain</a>
+      <a href="#docs">Docs</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <p class="eyebrow">Programming language • App runtime • Blockchain generator</p>
+      <h1>Build web apps, APIs, CMS platforms, dashboards, and blockchain-enabled systems with AGILANG.</h1>
+      <p class="lead">AGILANG combines readable <code>.agi</code> source files, reactive <code>.ags</code> templates, a developer-friendly CLI, starter kits, and optional SBQ/EVM blockchain runtime tooling.</p>
+      <div class="actions">
+        <a class="button primary" href="../docs/GETTING_STARTED.md">Start learning</a>
+        <a class="button" href="../docs/CLI_REFERENCE.md">CLI reference</a>
+      </div>
+    </section>
+
+    <section id="language" class="section">
+      <h2>What is AGILANG?</h2>
+      <p>AGILANG is a modular programming language and runtime for building modern applications. It is not only a blockchain project. Blockchain is one application domain inside a broader language and app development platform.</p>
+      <div class="grid three">
+        <article>
+          <h3>.agi source files</h3>
+          <p>Write backend logic, routes, services, CLI scripts, and runtime modules.</p>
+        </article>
+        <article>
+          <h3>.ags templates</h3>
+          <p>Create reactive pages with fetch/live bindings and clean layout composition.</p>
+        </article>
+        <article>
+          <h3>One CLI</h3>
+          <p>Generate apps, run programs, serve web apps, test projects, and create blockchain starters.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="quickstart" class="section panel">
+      <h2>Quick start</h2>
+      <pre><code>git clone https://github.com/GLOBAL-FINTECH/agilang.git
+cd agilang
+python -m pip install -e .
+agi --version
+agi run hello.agi</code></pre>
+      <h3>Hello world</h3>
+      <pre><code>fn main() -&gt; i32:
+    print("Hello from AGILANG")
+    return 0</code></pre>
+    </section>
+
+    <section id="apps" class="section">
+      <h2>Application starter kits</h2>
+      <div class="grid two">
+        <article>
+          <h3>Web app</h3>
+          <pre><code>agi new my-web-app
+cd my-web-app
+agi serve src/main.agi --host 127.0.0.1 --port 8000</code></pre>
+        </article>
+        <article>
+          <h3>CMS/blog starter</h3>
+          <pre><code>git checkout blog
+agi serve src/main.agi --host 127.0.0.1 --port 8000</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <section id="blockchain" class="section panel">
+      <h2>Blockchain generator</h2>
+      <p>AGILANG can generate a complete configurable blockchain starter, including chain runtime files, Beacon configuration, staking configuration, RPC configuration, Ethereum private-fork configuration, wallet examples, and runbook documentation.</p>
+      <pre><code>agi new my-chain --template blockchain
+cd my-chain
+agi run
+agi run src/chain.agi
+agi run src/beacon.agi</code></pre>
+      <p class="note">Production real-value networks require independent security review, hardened networking, validator key isolation, DoS protection, monitoring, and economic review.</p>
+    </section>
+
+    <section id="docs" class="section">
+      <h2>Documentation map</h2>
+      <div class="links">
+        <a href="../docs/GETTING_STARTED.md">Getting Started</a>
+        <a href="../docs/LANGUAGE_GUIDE.md">Language Guide</a>
+        <a href="../docs/CLI_REFERENCE.md">CLI Reference</a>
+        <a href="../docs/APPLICATIONS_AND_STARTERS.md">Applications and Starters</a>
+        <a href="../docs/BLOCKCHAIN_APP_GENERATOR.md">Blockchain Generator</a>
+        <a href="../docs/SBQ_BEACON_CHAIN_V21.md">SBQ Beacon Layer</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>AGILANG — MIT License. Developed by Izukanji Sirwimba, AGILab, Izurex Center Place Limited.</p>
+  </footer>
+</body>
+</html>
