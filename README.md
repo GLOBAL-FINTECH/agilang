@@ -1,51 +1,32 @@
-# AGILANG v1.9.3 Mainnet-Capable Blockchain Framework Edition
+# AGILANG EVM Chain Implementations
 
-> **Branch notice:** The `main` branch contains the AGILANG runtime, CLI, parser, AGS engine, blockchain/runtime modules, standard library, and runtime tests.  
-> For the public web app starter kit, blog/news starter, password reset, SMTP/email setup, admin/user dashboards, and full `.ags` application documentation, use the `blog` branch.
+Branch: `evm-chain-implementations`
 
-AGILANG v1.9.3 refines the v1.9 blockchain framework and expands the language beyond web, mobile, realtime, ZK and EVM tooling into a configurable **mainnet-capable blockchain framework**. It now supports selectable **PoS**, **DPoS/DPO**, and **Dev** consensus modes, stricter mainnet-style validation, validator block-signature hooks, peer/devnet sync, mempool management, fork choice, block production and a canonical chain database.
+This branch is dedicated to AGILANG/SBQ EVM chain implementation work, JSON-RPC, MetaMask-compatible local-network support, and wallet/app connectivity research.
 
-## Branch guide
+The stable runtime remains on `main`. The public web app starter remains on `blog`.
 
-| Branch | Purpose |
-|---|---|
-| `main` | Stable AGILANG runtime only. Keep this branch focused on runtime, CLI, parser, AGS engine, standard library, blockchain/runtime modules, docs, and tests. |
-| `dev` | Active runtime/framework development before promotion into `main`. |
-| `blog` | Public web app starter kit branch for blog/news/social starter apps, `.ags` pages, authentication, password reset, SMTP/email setup, and admin/user dashboards. |
+## Branch purpose
 
-See:
+Use this branch for:
 
-- `docs/BRANCHING_AND_RELEASE_POLICY.md`
-- `docs/WEB_APP_STARTER_GUIDE.md`
+- EVM execution integration
+- Ethereum-style JSON-RPC server work
+- MetaMask-compatible local network testing
+- SBQ custom-chain experiments
+- wallet read APIs
+- transaction receipt and block lookup APIs
+- RPC smoke tests
+- chain implementation documentation
 
 ## Install locally
 
 ```bash
+git clone https://github.com/GLOBAL-FINTECH/agilang.git
+cd agilang
+git checkout evm-chain-implementations
 python -m pip install -e .
 agi --version
-```
-
-Expected:
-
-```text
-AGILANG 1.9.3
-```
-
-For device and operating-system specific installation instructions, including Windows, macOS, Linux, Android, iOS/iPadOS, ChromeOS, Raspberry Pi, Docker, and shared hosting, see `DEVICE_OS_INSTALLATION.md`.
-
-## Create a normal web app
-
-```bash
-agi new test app two
-cd test-app-two
-agi run
-agi serve src/main.agi --host 127.0.0.1 --port 8000
-```
-
-For full web app starter documentation, password reset, email/SMTP setup, and admin/user dashboards, use the `blog` branch:
-
-```bash
-git checkout blog
 ```
 
 ## Create a blockchain app
@@ -60,108 +41,85 @@ agi run src/devnet.agi
 agi run src/evm_contract.agi
 ```
 
-Generated blockchain projects include:
+## JSON-RPC local network
 
-```text
-src/main.agi
-src/chain.agi
-src/mempool.agi
-src/devnet.agi
-src/evm_contract.agi
-config/validators.json
-docs/BLOCKCHAIN_RUNBOOK.md
-storage/.gitkeep
-tests/test_main.agi
-```
-
-
-## v1.9.3 tuning highlights
-
-- Fixed the native C runtime version mismatch so package, CLI diagnostics, source builds and prebuilt manifests report `1.9.3`.
-- Rebuilt the Linux x86_64 native runtime artifacts and refreshed SHA-256 manifest hashes.
-- Added pluggable consensus mode selection: `pos`, `dpos`/`dpo`, and `dev`.
-- Added DPoS/DPO delegated producer selection using delegate lists and delegation weights.
-- Added Dev consensus for deterministic local simulations.
-- Added `blockchain_mainnet_config()` for strict accounting, nonce ordering, required block signatures, higher finality depth and non-zero minimum gas price.
-- Added validator signature hooks and validation checks for signed blocks.
-- Added `blockchain_consensus_simulation()` and `agi blockchain simulate-consensus`.
-- Tightened mempool duplicate rejection and invalid transaction checks.
-- Added optional strict-accounting mode for private chains that need balance and nonce validation during transaction admission and block execution.
-- Added canonical state replay after fork-choice updates so balances, contracts and nonces remain deterministic after reorgs.
-- Re-executes imported blocks against parent state and rejects forged receipts, state updates and state roots.
-- Added regression tests covering runtime alignment, duplicate rejection, strict-accounting state rebuilds and imported-block validation hardening.
-
-## Blockchain CLI
+Start the local RPC server:
 
 ```bash
-agi blockchain capabilities
-agi blockchain demo
-agi blockchain simulate-consensus
-agi blockchain init-genesis --db storage/chain.sqlite --validator alice:60 --validator bob:40
-agi blockchain init-genesis --consensus dpo --validator alice:60 --validator bob:40
-agi blockchain mempool-demo --consensus pos --sender alice --to bob --value 10
-agi blockchain produce-block --consensus dev --validator alice --to bob --value 10
-agi blockchain devnet --consensus dpos --blocks 3
-agi blockchain merkle-root alice,bob,carol
+agi blockchain rpc-server --config config/rpc.json --db storage/chain.sqlite --auto-mine --dev-send
 ```
 
-## Blockchain standard-library functions
+Run the smoke test:
 
-```agi
-blockchain_capabilities()
-blockchain_config()
-blockchain_mainnet_config()
-blockchain_transaction()
-blockchain_merkle_root()
-consensus_engine()
-pos_consensus_engine()
-dpos_consensus_engine()
-dev_consensus_engine()
-blockchain_node()
-blockchain_devnet()
-blockchain_consensus_simulation()
-blockchain_demo()
+```bash
+agi blockchain rpc-smoke
 ```
 
-## Included blockchain components
+Default local network values:
 
-| Component | Status |
-|---|---:|
-| Proof-of-Stake consensus engine | Included |
-| DPoS/DPO consensus engine | Included |
-| Dev consensus engine | Included |
-| Pluggable consensus selector | Included |
-| Weighted validator proposer selection | Included |
-| Delegated producer selection | Included |
-| Mainnet profile config | Included |
-| Validator block-signature hooks | Included |
-| Block validation | Included |
-| Block production | Included |
-| Mempool validation/replacement/ordering | Included |
-| Canonical SQLite chain database | Included |
-| Fork-choice scoring | Included |
-| Finality-depth marking | Included |
-| In-process p2p/devnet sync | Included |
-| Transaction/block gossip hooks | Included |
-| EVM execution hooks | Included |
+| Setting | Value |
+|---|---|
+| RPC URL | `http://127.0.0.1:8545` |
+| Chain ID | `1900` |
+| Currency symbol | `SBQ` |
+| Decimals | `18` |
 
-## Existing AGILANG platform layers preserved
+## MetaMask local setup
 
-AGILANG still includes the previous framework layers:
+Add a custom network in MetaMask:
 
-- web apps and APIs
-- React/React Native scaffolding
-- WebSocket realtime transport
-- WebRTC signaling helpers
-- CGI/FastCGI shared-hosting deployment
-- native C + Python hybrid runtime bridge
-- low-level TCP/UDP networking
-- executable EVM runtime toolkit
-- zero-knowledge developer primitives
-- package manager, parser, AST, checker, formatter, LSP and CI/CD workflows
+| Field | Value |
+|---|---|
+| Network name | `AGILANG SBQ Local` |
+| RPC URL | `http://127.0.0.1:8545` |
+| Chain ID | `1900` |
+| Currency symbol | `SBQ` |
+
+## Target JSON-RPC methods
+
+- `web3_clientVersion`
+- `net_version`
+- `net_listening`
+- `net_peerCount`
+- `eth_chainId`
+- `eth_blockNumber`
+- `eth_gasPrice`
+- `eth_getBalance`
+- `eth_getTransactionCount`
+- `eth_getBlockByNumber`
+- `eth_getBlockByHash`
+- `eth_getTransactionByHash`
+- `eth_getTransactionReceipt`
+- `eth_getCode`
+- `eth_estimateGas`
+- `eth_call`
+- `eth_sendRawTransaction`
+- optional `eth_sendTransaction` for local development only
+
+## Documentation
+
+- `docs/EVM_CHAIN_IMPLEMENTATIONS.md`
+- `docs/JSON_RPC_METAMASK_V19_6.md`
+- `docs/BLOCKCHAIN_FRAMEWORK_V19.md`
+- `docs/EVM_PRODUCTION_RUNTIME_V18.md`
+- `docs/EVM_TOOLING_V16.md`
+
+## Local validation
+
+The uploaded AGILANG v1.9.6 JSON-RPC/MetaMask foundation package was extracted and tested locally.
+
+```text
+90 passed
+```
 
 ## Production boundary
 
-AGILANG v1.9.3 is a mainnet-capable framework for simulation, staging, private chains and custom chain development. It includes a stricter mainnet profile and signature-validation hooks, but it is still not a finished public real-value mainnet client. Before public launch, add audited cryptographic networking/signatures, persistent peer discovery, peer scoring, slashing economics, DoS protection, state tries, pruning, snapshots, monitoring, formal consensus review and independent security audits.
+This branch is for implementation and staging work. Before a public chain launch, add audited signed transaction support, stronger key handling, production network protections, monitoring, validator operations documentation, and an independent security review.
 
-See `docs/BLOCKCHAIN_FRAMEWORK_V19.md` and `docs/MAINTENANCE_TUNING_V19_1.md and docs/MAINTENANCE_TUNING_V19_2.md` for the full runbook.
+## Promotion path
+
+Stable work should move through:
+
+```text
+evm-chain-implementations → dev → main
+```

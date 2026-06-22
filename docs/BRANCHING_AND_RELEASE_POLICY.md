@@ -10,7 +10,7 @@ AGILANG separates the language runtime from deployable starter applications and 
 
 | Branch | Purpose | Rules |
 |---|---|---|
-| `main` | Stable AGILANG runtime branch | Runtime, CLI, parser, AGS engine, compiler/runtime bridge, standard library, blockchain/runtime modules, runtime documentation, and tests only. |
+| `main` | Stable AGILANG runtime branch | Runtime, CLI, parser, AGS engine, compiler/runtime bridge, standard library, stable blockchain/runtime modules, runtime documentation, and tests only. |
 | `dev` | Active runtime development branch | Runtime and framework changes are prepared and tested here before promotion to `main`. |
 | `blog` | Public web app starter branch | Blog/news/social starter app, `.ags` templates, authentication, password reset, SMTP/email configuration, admin/user UI, and starter documentation. |
 | `evm-chain-implementations` | Dedicated EVM chain implementation branch | JSON-RPC, MetaMask-compatible network connection, EVM/SBQ chain experiments, wallet RPC tests, and chain implementation documentation. |
@@ -19,7 +19,7 @@ AGILANG separates the language runtime from deployable starter applications and 
 
 The `main` branch must not become the full public web application branch or the experimental EVM implementation branch. It should remain clean and focused on the AGILANG runtime.
 
-Allowed in `main`:
+This branch is for AGILANG/SBQ EVM chain implementation work. It should contain the JSON-RPC, MetaMask, wallet, local RPC, and EVM execution integration notes needed to develop the EVM-chain layer.
 
 - AGILANG runtime source
 - CLI commands such as `agi` and `agilang`
@@ -31,7 +31,14 @@ Allowed in `main`:
 - runtime installation documentation
 - short links to starter or implementation branches
 
-Not allowed in `main`:
+- Ethereum-style JSON-RPC work
+- MetaMask-compatible local network setup
+- SBQ/EVM chain configuration
+- wallet read APIs
+- transaction lookup and receipt APIs
+- RPC smoke testing
+- EVM execution integration
+- production hardening notes
 
 - full blog application as the root app
 - full social media app as the root app
@@ -42,24 +49,15 @@ Not allowed in `main`:
 - public-facing app dashboards that are not required by runtime tests
 - experimental EVM chain implementation packages as the root branch
 
+```text
+evm-chain-implementations → dev → main
+```
+
+## Main Branch Boundary
+
+The `main` branch must remain clean and focused on the AGILANG runtime. It should not become the full public web application branch or the experimental EVM chain branch.
+
 ## Blog Branch Boundary
-
-The `blog` branch is the public AGILANG web app starter branch. It should contain the complete starter-kit experience for developers who want to build web applications using AGILANG and `.ags` views.
-
-The `blog` branch should include:
-
-- AGILANG web app starter
-- `.ags` views by default
-- blog/news modules
-- user dashboard
-- admin dashboard
-- authentication
-- password reset
-- SMTP/email configuration
-- migrations
-- deployment guide
-- screenshots or UI notes
-- production checklist
 
 ## EVM Chain Implementation Boundary
 
@@ -79,29 +77,13 @@ Development in this branch should not automatically redefine `main` as an EVM pu
 
 ## Development Flow
 
-Runtime development:
+## Development Commands
 
 ```bash
+# runtime work
 git checkout dev
-git pull origin dev
-# make runtime changes
-git add .
-git commit -m "runtime: describe change"
-git push origin dev
-```
 
-Promote runtime changes:
-
-```bash
-git checkout main
-git pull origin main
-git merge dev
-git push origin main
-```
-
-Starter app development:
-
-```bash
+# web starter work
 git checkout blog
 git pull origin blog
 # make web app starter changes
@@ -133,20 +115,8 @@ If the default branch remains `main`, the top of `README.md` must clearly state 
 
 ## Release Tags
 
-Runtime releases should be tagged from `main`:
-
-```bash
-git checkout main
-git tag runtime-v1.9.3
-git push origin runtime-v1.9.3
-```
-
-Starter releases should be tagged from `blog`:
-
-```bash
-git checkout blog
-git tag starter-web-v2.5
-git push origin starter-web-v2.5
+# EVM chain work
+git checkout evm-chain-implementations
 ```
 
 EVM implementation releases should be tagged from `evm-chain-implementations`:
