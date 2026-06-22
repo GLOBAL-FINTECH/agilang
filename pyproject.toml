@@ -24,8 +24,8 @@ data = ["numpy", "scikit-learn", "matplotlib", "requests"]
 dev = ["pytest"]
 
 [project.scripts]
-agilang = "agilang.cli:main"
-agi = "agilang.cli:main"
+agilang = "agilang.cli_runtime:main"
+agi = "agilang.cli_runtime:main"
 
 [tool.setuptools]
 packages = ["agilang", "agilang.native"]
