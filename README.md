@@ -13,7 +13,7 @@ learn the language -> create an app -> run it locally -> scaffold production-rea
 AGILANG is designed around `.agi` backend/source files and `.ags` reactive view templates. It also includes optional blockchain tooling so developers can generate a configurable SBQ/EVM-style blockchain project without manually assembling the database, node, validator, consensus, RPC, and wallet configuration from scratch.
 
 **License:** MIT  
-**Developed by:** Izukanji Sirwimba, AGILab, Izurex Center Place Limited
+**Developed by:** Izukanji Sirwimba, AGILab, Izurex Enterprise Limited
 
 ---
 
