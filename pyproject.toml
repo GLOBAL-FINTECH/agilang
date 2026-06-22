@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agilang"
-version = "1.9.4"
-description = "AGILANG production EVM systems language toolkit with executable EVM interpreter, low-level networking, blockchain tooling, zero-knowledge primitives, cross-platform web/mobile/shared-hosting runtimes, C + Python integration, secure realtime, parser, AST, checker, package manager, LSP, and CI/CD."
+version = "2.0.2"
+description = "AGILANG runtime and blockchain development toolkit."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "AGILANG Project" }]
-license = { text = "Proprietary / project owner controlled" }
+license = { text = "MIT" }
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
