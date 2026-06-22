@@ -2,7 +2,7 @@
 
 > **Main runtime branch:** this branch is for the AGILANG language/runtime, CLI, blockchain runtime, EVM/RPC tooling, and runtime tests. The public web app starter remains on the `blog` branch.
 
-AGILANG v2.0.2 is a blockchain/runtime upgrade that makes Ethereum-derived fork mode follow an **Ethereum proof-of-stake replica design by default** instead of using a separate AGILANG consensus system.
+AGILANG v2.0.2 is a blockchain/runtime upgrade that makes Ethereum-derived fork mode follow an **Ethereum proof-of-stake  design by default** instead of using a separate AGILANG consensus system.
 
 It keeps two clean lanes:
 
