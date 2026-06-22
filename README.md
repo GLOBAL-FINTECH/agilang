@@ -1,188 +1,150 @@
-# AGILANG EVM Chain Implementations
+# AGILANG v2.0.2 Ethereum PoS Replica Consensus Runtime
 
-Branch: `evm-chain-implementations`
+> **Main runtime branch:** this branch is for the AGILANG language/runtime, CLI, blockchain runtime, EVM/RPC tooling, and runtime tests. The public web app starter remains on the `blog` branch.
 
-This branch is dedicated to AGILANG/SBQ EVM chain implementation work, JSON-RPC, MetaMask-compatible local-network support, wallet/app connectivity research, and Ethereum external-client orchestration.
+AGILANG v2.0.2 is a blockchain/runtime upgrade that makes Ethereum-derived fork mode follow an **Ethereum proof-of-stake replica design by default** instead of using a separate AGILANG consensus system.
 
-The stable runtime remains on `main`. The public web app starter remains on `blog`.
+It keeps two clean lanes:
 
-## Branch purpose
-
-Use this branch for:
-
-- EVM execution integration
-- Ethereum-style JSON-RPC server work
-- MetaMask-compatible local network testing
-- SBQ custom-chain experiments
-- wallet read APIs
-- transaction receipt and block lookup APIs
-- RPC smoke tests
-- chain implementation documentation
-- Ethereum execution-client orchestration
-- Ethereum consensus/beacon-client orchestration
-- Ethereum validator-client orchestration
-- archive-node command planning
-- Engine API JWT secret management
-
-## Current SBQ network status
-
-The SBQ blockchain starter has reached a functional local/staging milestone with proof-of-stake block production, signed-block enforcement, persistent chain state, JSON-RPC read APIs, and MetaMask local-network compatibility.
-
-See:
-
-- `docs/SBQ_BLOCKCHAIN_NETWORK_STATUS.md`
-
-## Ethereum external-client runtime status
-
-AGILANG v2.0.0 adds a first-class Ethereum external-client runtime layer. This closes the earlier implementation gap by allowing AGILANG to generate configuration, validate ports, create Engine API JWT secrets, detect installed clients, plan startup commands, and optionally supervise real Ethereum execution, consensus, and validator clients.
-
-Supported roles:
-
-- execution clients: Geth, Nethermind, Besu, Erigon
-- consensus/beacon clients: Lighthouse, Prysm, Teku, Nimbus, Lodestar
-- validator clients: Lighthouse, Prysm, Teku, Nimbus, Lodestar
-
-Important boundary: AGILANG/SBQ custom consensus does not validate Ethereum mainnet directly. Ethereum mainnet validation must be performed by the real Ethereum execution, consensus, and validator client stack.
-
-See:
-
-- `docs/ETHEREUM_CLIENT_STACK_V20.md`
-- `agilang/ethereum_clients.py`
-- `tests/test_v20_ethereum_clients.py`
+1. **SBQ / AGILANG custom-chain runtime** — native PoS/DPoS/dev consensus, staking, slashing hooks, JSON-RPC, isolated validator API and archive profile.
+2. **Ethereum-style fork/runtime mode** — Ethereum PoS replica architecture for private/custom networks, plus real external Ethereum clients for live Ethereum mainnet connectivity.
 
 ## Install locally
 
 ```bash
 git clone https://github.com/GLOBAL-FINTECH/agilang.git
 cd agilang
-git checkout evm-chain-implementations
 python -m pip install -e .
 agi --version
 ```
 
-## Create a blockchain app
+Expected:
+
+```text
+AGILANG 2.0.2
+```
+
+## Create a blockchain project
 
 ```bash
 agi new my chain --template blockchain
 cd my-chain
 agi run
 agi run src/chain.agi
-agi run src/mempool.agi
-agi run src/devnet.agi
-agi run src/evm_contract.agi
+agi run src/staking.agi
+agi run src/network.agi
+agi run src/ethereum_clients.agi
+agi run src/ethereum_consensus.agi
 ```
 
-## JSON-RPC local network
+Generated blockchain projects now include:
 
-Start the local RPC server:
-
-```bash
-agi blockchain rpc-server --config config/rpc.json --db storage/chain.sqlite --auto-mine --dev-send
+```text
+src/ethereum_consensus.agi
+config/ethereum-consensus-replica.json
+config/ethereum-clients.json
+config/network.json
+config/rpc.json
+docs/ETHEREUM_CONSENSUS_REPLICA_V20_2.md
+docs/BLOCKCHAIN_RUNBOOK.md
 ```
 
-Run the smoke test:
+## Ethereum PoS replica commands
 
 ```bash
-agi blockchain rpc-smoke
+agi chain ethereum-consensus-capabilities
+agi chain consensus-replacement-plan --network private-fork --consensus ethereum-pos-replica --chain-id 901900
+agi chain ethereum-consensus-write-config --chain-id 901900
+agi chain ethereum-consensus-check
+agi chain ethereum-consensus-sim
+agi chain plan --mode ethereum-consensus-replica
+agi chain start --mode ethereum-consensus-replica --config config/network.json
 ```
 
-Default local network values:
-
-| Setting | Value |
-|---|---|
-| RPC URL | `http://127.0.0.1:8545` |
-| Chain ID | `1900` |
-| Currency symbol | `SBQ` |
-| Decimals | `18` |
-
-## MetaMask local setup
-
-Add a custom network in MetaMask:
-
-| Field | Value |
-|---|---|
-| Network name | `AGILANG SBQ Local` |
-| RPC URL | `http://127.0.0.1:8545` |
-| Chain ID | `1900` |
-| Currency symbol | `SBQ` |
-
-## Ethereum external-client commands
+Private Beacon API:
 
 ```bash
-agi chain ethereum-clients
-agi chain ethereum-detect
-agi chain ethereum-jwt --jwt-secret ethereum-data/jwt.hex
-agi chain ethereum-write-config --mode full
-agi chain ethereum-write-config --mode archive
-agi chain ethereum-write-config --mode validator --fee-recipient 0x0000000000000000000000000000000000000000
+agi chain ethereum-consensus-beacon --host 127.0.0.1 --port 5052
+```
+
+## What the replica models
+
+- execution/consensus split
+- private Engine API boundary
+- private Beacon API service
+- 12-second slots
+- 32-slot epochs
+- validator registry
+- proposer duties
+- attestation committees
+- source/target/head votes
+- LMD-GHOST-style head choice
+- Casper FFG-style finality
+- reward/penalty hooks
+- slashing hooks
+- private validator API isolation
+
+## Ethereum mainnet mode
+
+Live Ethereum mainnet remains external-client based:
+
+```bash
 agi chain ethereum-plan --mode full
 agi chain ethereum-plan --mode archive
 agi chain ethereum-plan --mode validator --fee-recipient 0x0000000000000000000000000000000000000000
-agi chain ethereum-check
 agi chain ethereum-start --mode full --dry-run
-agi chain ethereum-start --mode archive --dry-run
-agi chain ethereum-start --mode validator --dry-run
 ```
 
-## Target JSON-RPC methods
+AGILANG does not override live Ethereum mainnet consensus. The replica profile is for private/custom Ethereum-derived networks with a new chain ID and custom genesis.
 
-- `web3_clientVersion`
-- `net_version`
-- `net_listening`
-- `net_peerCount`
-- `eth_chainId`
-- `eth_blockNumber`
-- `eth_gasPrice`
-- `eth_getBalance`
-- `eth_getTransactionCount`
-- `eth_getBlockByNumber`
-- `eth_getBlockByHash`
-- `eth_getTransactionByHash`
-- `eth_getTransactionReceipt`
-- `eth_getCode`
-- `eth_estimateGas`
-- `eth_call`
-- `eth_sendRawTransaction`
-- optional `eth_sendTransaction` for local development only
+## Correct architecture
+
+| Mode | Consensus |
+|---|---|
+| SBQ native chain | AGILANG PoS/DPoS/dev |
+| Ethereum-derived private fork | Ethereum PoS replica by default |
+| Ethereum mainnet connectivity | Real external Ethereum clients |
+| Ethereum mainnet validation | Official Ethereum consensus/validator clients only |
 
 ## Documentation
 
-- `docs/SBQ_BLOCKCHAIN_NETWORK_STATUS.md`
+- `docs/ETHEREUM_CONSENSUS_REPLICA_V20_2.md`
 - `docs/ETHEREUM_CLIENT_STACK_V20.md`
+- `docs/SBQ_BLOCKCHAIN_NETWORK_STATUS.md`
 - `docs/EVM_CHAIN_IMPLEMENTATIONS.md`
 - `docs/JSON_RPC_METAMASK_V19_6.md`
 - `docs/BLOCKCHAIN_FRAMEWORK_V19.md`
-- `docs/EVM_PRODUCTION_RUNTIME_V18.md`
-- `docs/EVM_TOOLING_V16.md`
 
-## Local validation
+## Validation summary
 
-The uploaded AGILANG v1.9.6 JSON-RPC/MetaMask foundation package was extracted and tested locally.
+Grouped validation from the uploaded AGILANG v2.0.2 runtime package:
 
 ```text
-90 passed
+Blockchain/RPC/staking/network/Ethereum consensus: 67 passed
+Core/web/realtime/security: 31 passed
+Runtime/prebuilt/scaffold: 13 passed
+Shared-hosting/mobile/systems/EVM/ZK: 22 passed
+Total: 133 passed
 ```
 
-The uploaded AGILANG v2.0.0 Ethereum external-client runtime package was extracted and tested locally.
+Examples:
 
 ```text
-PYTHONPATH=. pytest tests/test_v20_ethereum_clients.py -q
-10 passed
+27 examples passed
+2 network/long-running examples skipped by default
+```
 
-PYTHONPATH=. pytest tests/test_v19_blockchain.py tests/test_v19_maintenance_tuning.py tests/test_v20_ethereum_clients.py -q
-29 passed
+Local connector validation of the uploaded package confirmed the Ethereum consensus/client group:
+
+```text
+tests/test_v202_ethereum_consensus_replica.py
+tests/test_v201_agilang_consensus_replacement.py
+tests/test_v20_ethereum_clients.py
+28 passed
 ```
 
 ## Production boundary
 
-This branch is for implementation and staging work. Before a public chain launch, add audited signed transaction support, stronger key handling, production network protections, monitoring, validator operations documentation, and an independent security review.
+This runtime is suitable for local development, staging, private-fork simulation, and AGILANG/SBQ chain implementation work. Before any public real-value launch, add independent security review, hardened networking, peer scoring, validator key isolation, slashing economics, DoS hardening, archive/indexer separation, and production monitoring.
 
-For Ethereum mainnet connectivity, AGILANG must rely on external Ethereum clients for execution, consensus, and validator duties. Do not describe SBQ/AGILANG custom consensus as an Ethereum mainnet validator.
-
-## Promotion path
-
-Stable work should move through:
-
-```text
-evm-chain-implementations → dev → main
-```
+For Ethereum mainnet, AGILANG must rely on official Ethereum execution, consensus, and validator clients. Do not describe AGILANG custom consensus as an Ethereum mainnet validator.
