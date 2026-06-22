@@ -1,4 +1,4 @@
-# AGILANG v2.0.2 Ethereum PoS Replica Consensus Runtime
+# AGILANG v2.0.2 Ethereum PoS  Consensus Runtime
 
 > **Main runtime branch:** this branch is for the AGILANG language/runtime, CLI, blockchain runtime, EVM/RPC tooling, and runtime tests. The public web app starter remains on the `blog` branch.
 
