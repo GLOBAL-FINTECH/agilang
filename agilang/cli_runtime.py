@@ -1,8 +1,8 @@
 """Runtime CLI shim for AGILANG blockchain/Ethereum consensus commands.
 
 This wrapper keeps the existing AGILANG CLI intact while adding first-class
-Ethereum PoS replica commands and a blockchain scaffold path. Unknown commands
-are delegated to agilang.cli.
+blockchain, native SBQ Beacon, and Ethereum PoS replica commands. Unknown
+commands are delegated to agilang.cli.
 """
 
 from __future__ import annotations
@@ -12,6 +12,17 @@ import json
 import sys
 from pathlib import Path
 
+from .beacon import (
+    BeaconConfig,
+    BeaconStore,
+    attest_to_head,
+    beacon_capabilities,
+    fork_choice_head,
+    init_beacon_runtime,
+    process_epoch_finality,
+    produce_beacon_block,
+    simulate_beacon,
+)
 from .ethereum_consensus_replica import (
     ethereum_consensus_capabilities,
     ethereum_consensus_check,
@@ -54,7 +65,8 @@ def _handle_new(argv: list[str]) -> bool:
     root = Path(name).resolve()
     root.mkdir(parents=True, exist_ok=True)
 
-    cfg = ethereum_consensus_replica_config()
+    eth_cfg = ethereum_consensus_replica_config()
+    beacon_cfg = BeaconConfig()
     genesis = {
         "chain_id": 1900,
         "name": "SBQ-Blockchain",
@@ -62,10 +74,11 @@ def _handle_new(argv: list[str]) -> bool:
         "decimals": 18,
         "mainnet_profile": True,
         "require_block_signatures": True,
+        "native_beacon_consensus": "sbq-beacon",
         "ethereum_derived_consensus_default": "ethereum-pos-replica",
     }
     network = {
-        "mode": "ethereum-consensus-replica",
+        "mode": "sbq-beacon",
         "rpc": {"host": "127.0.0.1", "port": 8545},
         "beacon_api": {"host": "127.0.0.1", "port": 5052, "public": False},
         "validator_api": {"host": "127.0.0.1", "port": 8651, "public": False},
@@ -73,8 +86,9 @@ def _handle_new(argv: list[str]) -> bool:
     }
 
     _write(root / "agilang.toml", "[project]\nname = \"" + name + "\"\nentry = \"src/main.agi\"\n")
-    _write(root / "src/main.agi", "fn main() -> i32:\n    print(\"SBQ Blockchain starter\")\n    print(\"run: agi chain ethereum-consensus-check\")\n    return 0\n")
+    _write(root / "src/main.agi", "fn main() -> i32:\n    print(\"SBQ Blockchain starter\")\n    print(\"run: agi beacon status\")\n    print(\"run: agi chain ethereum-consensus-check\")\n    return 0\n")
     _write(root / "src/chain.agi", "fn main() -> i32:\n    print(\"SBQ chain status entrypoint\")\n    return 0\n")
+    _write(root / "src/beacon.agi", "fn main() -> i32:\n    print(\"SBQ native Beacon consensus layer\")\n    print(\"commands: agi beacon status, agi beacon produce-block, agi beacon attest, agi beacon finalize\")\n    return 0\n")
     _write(root / "src/staking.agi", "fn main() -> i32:\n    print(\"staking profile placeholder\")\n    return 0\n")
     _write(root / "src/network.agi", "fn main() -> i32:\n    print(\"network profile placeholder\")\n    return 0\n")
     _write(root / "src/ethereum_clients.agi", "fn main() -> i32:\n    print(\"Ethereum external client orchestration profile\")\n    return 0\n")
@@ -82,12 +96,15 @@ def _handle_new(argv: list[str]) -> bool:
     _write(root / "config/genesis.json", json.dumps(genesis, indent=2))
     _write(root / "config/network.json", json.dumps(network, indent=2))
     _write(root / "config/rpc.json", json.dumps({"host": "127.0.0.1", "port": 8545, "chain_id": 1900}, indent=2))
-    _write(root / "config/ethereum-consensus-replica.json", json.dumps(cfg.as_dict(), indent=2))
+    _write(root / "config/beacon.json", json.dumps(beacon_cfg.as_dict(), indent=2))
+    _write(root / "config/ethereum-consensus-replica.json", json.dumps(eth_cfg.as_dict(), indent=2))
     _write(root / "config/ethereum-clients.json", json.dumps({"mode": "full", "execution_client": "geth", "consensus_client": "lighthouse", "validator_client": "lighthouse"}, indent=2))
     _write(root / "config/wallets/wallets.example.json", json.dumps({"warning": "Do not commit real private keys. Replace this file locally."}, indent=2))
     _write(root / "storage/logs/.gitkeep", "")
-    _write(root / "docs/ETHEREUM_CONSENSUS_REPLICA_V20_2.md", "# Ethereum Consensus Replica\n\nThis blockchain starter defaults Ethereum-derived private fork mode to `ethereum-pos-replica`.\n")
-    _write(root / "docs/BLOCKCHAIN_RUNBOOK.md", "# Blockchain Runbook\n\nRun `agi run`, then `agi chain ethereum-consensus-check`, then configure RPC, wallets, validators, and networking.\n")
+    init_beacon_runtime(root, beacon_cfg)
+    _write(root / "docs/SBQ_BEACON_CHAIN_V21.md", "# SBQ Beacon Chain\n\nThis starter includes the native AGILANG/SBQ Beacon consensus layer with slots, epochs, validators, attestations, fork choice, checkpoint finality, slashing detection hooks, and SQLite persistence.\n")
+    _write(root / "docs/ETHEREUM_CONSENSUS_REPLICA_V20_2.md", "# Ethereum Consensus Replica\n\nThis blockchain starter keeps Ethereum-derived private fork mode on `ethereum-pos-replica`.\n")
+    _write(root / "docs/BLOCKCHAIN_RUNBOOK.md", "# Blockchain Runbook\n\nRun `agi run`, then `agi beacon status`, `agi beacon produce-block`, `agi beacon attest`, `agi beacon finalize`, and configure RPC, wallets, validators, and networking.\n")
     print(f"Created AGILANG blockchain project: {root}")
     return True
 
@@ -122,6 +139,14 @@ def _consensus_replacement_plan(args):
 
 def _plan(args):
     mode = args.mode
+    if mode in {"sbq-beacon", "beacon"}:
+        _print_json({
+            "ok": True,
+            "mode": "sbq-beacon",
+            "services": ["beacon_state", "validator_registry", "block_producer", "attestation_processor", "fork_choice", "finality", "slashing_hooks", "execution_payload_bridge", "sqlite_store"],
+            "capabilities": beacon_capabilities(),
+        })
+        return
     if mode != "ethereum-consensus-replica":
         _print_json({"ok": False, "error": "unsupported_mode", "mode": mode})
         raise SystemExit(1)
@@ -136,6 +161,17 @@ def _plan(args):
 
 def _start(args):
     mode = args.mode
+    if mode in {"sbq-beacon", "beacon"}:
+        store = BeaconStore("storage/beacon.sqlite")
+        state = store.load_state()
+        _print_json({
+            "ok": True,
+            "mode": "sbq-beacon",
+            "dry_run": bool(args.dry_run),
+            "message": "Native SBQ Beacon runtime plan is valid. Use beacon commands for local block/attestation/finality steps; long-running supervision should be enabled by the chain host runtime.",
+            "state": state.as_dict(),
+        })
+        return
     if mode != "ethereum-consensus-replica":
         _print_json({"ok": False, "error": "unsupported_mode", "mode": mode})
         raise SystemExit(1)
@@ -154,7 +190,7 @@ def _start(args):
         raise SystemExit(1)
 
 
-def _beacon(args):
+def _beacon_api_boundary(args):
     cfg = ethereum_consensus_replica_config()
     cfg.beacon_api.host = args.host
     cfg.beacon_api.port = int(args.port)
@@ -222,15 +258,93 @@ def _handle_chain(argv: list[str]) -> bool:
         parser = argparse.ArgumentParser(prog="agi chain ethereum-consensus-beacon")
         parser.add_argument("--host", default="127.0.0.1")
         parser.add_argument("--port", type=int, default=5052)
-        _beacon(parser.parse_args(argv[2:]))
+        _beacon_api_boundary(parser.parse_args(argv[2:]))
         return True
 
     return False
 
 
+def _load_beacon_store(path: str = "storage/beacon.sqlite") -> BeaconStore:
+    store = BeaconStore(path)
+    store.init()
+    return store
+
+
+def _handle_beacon(argv: list[str]) -> bool:
+    if not argv or argv[0] != "beacon":
+        return False
+
+    command = argv[1] if len(argv) > 1 else "status"
+
+    if command == "capabilities":
+        _print_json(beacon_capabilities())
+        return True
+
+    if command == "init":
+        parser = argparse.ArgumentParser(prog="agi beacon init")
+        parser.add_argument("--path", default=".")
+        parser.add_argument("--slot-seconds", type=int, default=6)
+        parser.add_argument("--slots-per-epoch", type=int, default=16)
+        parser.add_argument("--chain-id", type=int, default=1900)
+        args = parser.parse_args(argv[2:])
+        cfg = BeaconConfig(chain_id=args.chain_id, slot_seconds=args.slot_seconds, slots_per_epoch=args.slots_per_epoch)
+        _print_json(init_beacon_runtime(args.path, cfg))
+        return True
+
+    if command == "simulate":
+        parser = argparse.ArgumentParser(prog="agi beacon simulate")
+        parser.add_argument("--validators", type=int, default=64)
+        parser.add_argument("--epochs", type=int, default=2)
+        parser.add_argument("--slot-seconds", type=int, default=6)
+        parser.add_argument("--slots-per-epoch", type=int, default=16)
+        args = parser.parse_args(argv[2:])
+        _print_json(simulate_beacon(args.validators, args.epochs, args.slot_seconds, args.slots_per_epoch))
+        return True
+
+    store = _load_beacon_store()
+    state = store.load_state()
+
+    if command == "status":
+        _print_json({"ok": True, "state": state.as_dict()})
+        return True
+
+    if command == "validators":
+        _print_json({"ok": True, "validators": [v.as_dict() for v in state.validators]})
+        return True
+
+    if command == "produce-block":
+        block = produce_beacon_block(state)
+        store.save_state(state)
+        _print_json({"ok": True, "block": block.as_dict(), "state": state.as_dict()})
+        return True
+
+    if command == "attest":
+        attestations = attest_to_head(state)
+        store.save_state(state)
+        _print_json({"ok": True, "attestations": [a.as_dict() for a in attestations], "state": state.as_dict()})
+        return True
+
+    if command == "finalize":
+        result = process_epoch_finality(state)
+        store.save_state(state)
+        _print_json(result)
+        return True
+
+    if command == "fork-choice":
+        result = fork_choice_head(state)
+        store.save_state(state)
+        _print_json(result)
+        return True
+
+    _print_json({"ok": False, "error": "unsupported_beacon_command", "command": command})
+    raise SystemExit(1)
+
+
 def main(argv: list[str] | None = None) -> None:
     args = list(sys.argv[1:] if argv is None else argv)
     if _handle_new(args):
+        return
+    if _handle_beacon(args):
         return
     if _handle_chain(args):
         return
