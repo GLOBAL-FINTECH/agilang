@@ -19,6 +19,14 @@ Use this branch for:
 - RPC smoke tests
 - chain implementation documentation
 
+## Current SBQ network status
+
+The SBQ blockchain starter has reached a functional local/staging milestone with proof-of-stake block production, signed-block enforcement, persistent chain state, JSON-RPC read APIs, and MetaMask local-network compatibility.
+
+See:
+
+- `docs/SBQ_BLOCKCHAIN_NETWORK_STATUS.md`
+
 ## Install locally
 
 ```bash
@@ -98,6 +106,7 @@ Add a custom network in MetaMask:
 
 ## Documentation
 
+- `docs/SBQ_BLOCKCHAIN_NETWORK_STATUS.md`
 - `docs/EVM_CHAIN_IMPLEMENTATIONS.md`
 - `docs/JSON_RPC_METAMASK_V19_6.md`
 - `docs/BLOCKCHAIN_FRAMEWORK_V19.md`
