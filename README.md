@@ -1,6 +1,22 @@
 # AGILANG v1.9.3 Mainnet-Capable Blockchain Framework Edition
 
+> **Branch notice:** The `main` branch contains the AGILANG runtime, CLI, parser, AGS engine, blockchain/runtime modules, standard library, and runtime tests.  
+> For the public web app starter kit, blog/news starter, password reset, SMTP/email setup, admin/user dashboards, and full `.ags` application documentation, use the `blog` branch.
+
 AGILANG v1.9.3 refines the v1.9 blockchain framework and expands the language beyond web, mobile, realtime, ZK and EVM tooling into a configurable **mainnet-capable blockchain framework**. It now supports selectable **PoS**, **DPoS/DPO**, and **Dev** consensus modes, stricter mainnet-style validation, validator block-signature hooks, peer/devnet sync, mempool management, fork choice, block production and a canonical chain database.
+
+## Branch guide
+
+| Branch | Purpose |
+|---|---|
+| `main` | Stable AGILANG runtime only. Keep this branch focused on runtime, CLI, parser, AGS engine, standard library, blockchain/runtime modules, docs, and tests. |
+| `dev` | Active runtime/framework development before promotion into `main`. |
+| `blog` | Public web app starter kit branch for blog/news/social starter apps, `.ags` pages, authentication, password reset, SMTP/email setup, and admin/user dashboards. |
+
+See:
+
+- `docs/BRANCHING_AND_RELEASE_POLICY.md`
+- `docs/WEB_APP_STARTER_GUIDE.md`
 
 ## Install locally
 
@@ -24,6 +40,12 @@ agi new test app two
 cd test-app-two
 agi run
 agi serve src/main.agi --host 127.0.0.1 --port 8000
+```
+
+For full web app starter documentation, password reset, email/SMTP setup, and admin/user dashboards, use the `blog` branch:
+
+```bash
+git checkout blog
 ```
 
 ## Create a blockchain app
