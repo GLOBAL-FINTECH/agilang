@@ -1,0 +1,25 @@
+# AGILANG v0.5 production language features
+
+struct Customer:
+    name: str
+    balance: f64
+
+enum PaymentStatus:
+    PENDING
+    APPROVED
+    FAILED
+
+fn calculate_fee(amount: f64, rate: f64 = 0.025) -> f64:
+    const minimum_fee: f64 = 1.0
+    let fee: f64 = amount * rate
+    if fee < minimum_fee:
+        return minimum_fee
+    return fee
+
+fn main() -> i32:
+    let customer: Customer = Customer("GTiPay Merchant", 1500.0)
+    let fee: f64 = calculate_fee(customer.balance)
+    print("customer", customer.name)
+    print("fee", fee)
+    print("status", PaymentStatus.APPROVED.name)
+    return 0

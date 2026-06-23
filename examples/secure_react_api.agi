@@ -1,0 +1,25 @@
+# AGILANG v1.0 secure web endpoint for React/mobile clients.
+
+fn create_app():
+    let app = web_app("secure-react-api", True)
+    app.before(body_limit(65536))
+    app.before(rate_limit(100, 60))
+    app.after(security_headers())
+
+    fn health(request):
+        return json_response({"ok": True, "service": "agilang-v1-secure-api"})
+
+    fn realtime_hint(request):
+        return json_response({"websocket": "ws://127.0.0.1:9000/realtime", "webrtc": "ws://127.0.0.1:9000/webrtc"})
+
+    app.get("/health", health)
+    app.get("/client-config", realtime_hint)
+    return app
+
+fn main() -> i32:
+    let app = create_app()
+    let server = app.listen("127.0.0.1", 0)
+    server.run_background()
+    print(web_get(server.url + "/health"))
+    server.stop()
+    return 0

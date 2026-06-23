@@ -1,0 +1,12 @@
+fn main() -> i32:
+    let selector = evm_function_selector("transfer(address,uint256)")
+    print("transfer selector", selector)
+    let calldata = evm_contract_call_data("balanceOf(address)", ["address"], ["0x0000000000000000000000000000000000000001"])
+    print("calldata", calldata)
+    let builder = evm_bytecode_builder()
+    let code = builder.push(1).push(2).add().stop().hex()
+    let ops = evm_disassemble(code)
+    assert_eq(ops[0]["name"], "PUSH1")
+    assert_eq(ops[2]["name"], "ADD")
+    print("evm tooling ok", evm_capabilities()["bytecode_builder"])
+    return 0

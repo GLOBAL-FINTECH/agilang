@@ -1,0 +1,24 @@
+# Demonstrates v0.5 type aliases, pub fn, const, struct, enum, and checks.
+
+type Money = f64
+
+struct Invoice:
+    id: str
+    amount: Money
+
+enum InvoiceStatus:
+    DRAFT
+    PAID
+    FAILED
+
+pub fn fee(amount: Money, rate: f64 = 0.025) -> Money:
+    const minimum: Money = 1.0
+    let calculated: Money = amount * rate
+    if calculated < minimum:
+        return minimum
+    return calculated
+
+fn main() -> i32:
+    let inv: Invoice = Invoice("INV-001", 2500.0)
+    print("invoice", inv.id, "fee", fee(inv.amount), "status", InvoiceStatus.PAID.name)
+    return 0

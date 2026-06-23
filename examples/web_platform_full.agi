@@ -1,0 +1,53 @@
+fn main() -> i32:
+    let secret = "dev-secret-change-me"
+    let db = sqlite_db("platform_demo.db")
+    let User = model("User", {
+        "id": integer(primary_key=True, nullable=False),
+        "email": string(nullable=False, unique=True),
+        "name": string(nullable=False)
+    })
+
+    fn create_users(db):
+        User.create_table(db)
+
+    migrate(db, [("001_create_users", create_users)])
+    let existing = User.where(db, email="ada@example.com").first()
+    if existing == None:
+        User(email="ada@example.com", name="Ada").save(db)
+
+    let jobs = job_queue(1)
+    let app = web_app("agilang-platform", True)
+    app.middleware_group("secure", [auth_required(secret), csrf_protect(secret)])
+
+    fn home(request):
+        return html_response("<h1>AGILANG v0.9 Web Platform</h1>")
+
+    fn login(request):
+        let user = {"id": 1, "email": "ada@example.com"}
+        return login_user(json_response({"ok": True}), user, secret)
+
+    fn create_profile(request):
+        let result = validate(request.json({}), {"email": "required|email", "name": "required|min:2"})
+        if not result.ok:
+            return json_response({"errors": result.errors}, status=422)
+        let user = User(email=result.data["email"], name=result.data["name"]).save(db)
+        return json_response(user.to_dict(), status=201)
+
+    fn run_report(email):
+        return "report-ready:" + email
+
+    fn queue_report(request):
+        let job_id = jobs.enqueue(run_report, request.user["email"])
+        return json_response({"job_id": job_id})
+
+    app.get("/", home)
+    app.post("/login", login)
+    app.post("/profiles", create_profile)
+    app.post("/reports", queue_report, middleware="secure")
+
+    let server = app.listen("127.0.0.1", 0)
+    server.run_background()
+    print(web_get(server.url + "/"))
+    server.stop()
+    jobs.stop()
+    return 0

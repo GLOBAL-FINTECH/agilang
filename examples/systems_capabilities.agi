@@ -1,0 +1,5 @@
+fn main() -> i32:
+    let caps = systems_capabilities()
+    assert_eq(caps["not_web_only"], True)
+    print("systems", caps["supported_app_types"])
+    return 0

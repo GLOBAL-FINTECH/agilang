@@ -1,0 +1,26 @@
+# AGILANG v1.0 WebRTC signaling example.
+# This coordinates offer/answer/ICE messages over AGILANG WebSockets.
+
+fn main() -> i32:
+    let server = webrtc_signal_server("127.0.0.1", 0, "/webrtc")
+    server.run_background()
+
+    let alice = websocket_connect("ws://127.0.0.1:" + str(server.actual_port) + "/webrtc")
+    let bob = websocket_connect("ws://127.0.0.1:" + str(server.actual_port) + "/webrtc")
+
+    alice.send({"type": "webrtc.join", "peer_id": "alice", "room": "demo"})
+    bob.send({"type": "webrtc.join", "peer_id": "bob", "room": "demo"})
+    alice.receive(2.0)
+    bob.receive(2.0)
+
+    alice.send(webrtc_offer("fake-sdp-offer", "alice", to_peer="bob", room="demo"))
+    let first = parse_webrtc_signal(bob.receive(2.0))
+    let forwarded = first
+    if first["type"] != "webrtc.offer":
+        forwarded = parse_webrtc_signal(bob.receive(2.0))
+    print("webrtc", forwarded["type"], forwarded["payload"]["sdp"])
+
+    alice.close()
+    bob.close()
+    server.stop()
+    return 0

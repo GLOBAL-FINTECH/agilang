@@ -1,0 +1,8 @@
+# Simple web fetch example
+
+fn main() -> i32:
+    let url = "https://www.example.com"
+    let content = http_get(url)
+    # Print the first 200 characters of the fetched content
+    print(content[:200])
+    return 0
