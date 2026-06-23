@@ -92,6 +92,9 @@ git commit -m "starter: describe change"
 git push origin blog
 ```
 
+## GitHub Landing Page
+
+If the repository landing page should show the public web app starter documentation, switch the GitHub default branch to `blog`:
 EVM chain implementation development:
 
 ```bash
@@ -111,6 +114,13 @@ If the GitHub landing page should show the web app starter documentation, set th
 GitHub → Repository → Settings → Branches → Default branch → blog
 ```
 
+If the default branch remains `main`, the README on `main` should remain runtime-focused and link developers to the `blog` branch.
+
+## Final Rule
+
+`main` = runtime only.  
+`dev` = runtime development.  
+`blog` = public web app starter.
 If the default branch remains `main`, the top of `README.md` must clearly state that `main` is runtime-only and link users to the `blog` branch for the public web app starter.
 
 ## Release Tags
