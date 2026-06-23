@@ -1,4 +1,4 @@
-# AGILANG CMS / Blog Starter Kit
+# AGILANG Programming Language CMS / Blockchain / Blog Starter Kit
 
 > **Main runtime branch:** this branch contains the AGILANG programming language runtime, CLI, parser/runtime tooling, AGS template engine, app scaffolding, blockchain generator, SBQ Beacon layer, EVM/RPC tooling, Ethereum external-client orchestration, and runtime tests. The `blog` branch is the public web/CMS starter branch.
 
