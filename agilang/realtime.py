@@ -99,6 +99,20 @@ def _read_exact(sock: socket.socket, size: int) -> bytes:
     return b"".join(chunks)
 
 
+def _websocket_accept_digest(value: str) -> str:
+    """Return the RFC 6455 Sec-WebSocket-Accept digest.
+
+    WebSocket handshakes require SHA-1 by protocol; this is not used as a
+    security hash for passwords, signatures or content integrity.
+    """
+    try:
+        digest = hashlib.sha1(value.encode("ascii"), usedforsecurity=False).digest()
+    except TypeError:  # Python implementations without usedforsecurity.
+        # RFC 6455 requires SHA-1 here; this is not a security hash.
+        digest = hashlib.sha1(value.encode("ascii")).digest()  # nosec B324
+    return base64.b64encode(digest).decode("ascii")
+
+
 def _encode_frame(payload: str | bytes, *, opcode: int = 0x1, mask: bool = False) -> bytes:
     if isinstance(payload, str):
         payload_bytes = payload.encode("utf-8")
@@ -451,7 +465,7 @@ class WebSocketServer:
         key = headers.get("sec-websocket-key")
         if not key:
             raise WebSocketProtocolError("Missing Sec-WebSocket-Key header")
-        accept = base64.b64encode(hashlib.sha1((key + GUID).encode("ascii")).digest()).decode("ascii")
+        accept = _websocket_accept_digest(key + GUID)
         response = (
             "HTTP/1.1 101 Switching Protocols\r\n"
             "Upgrade: websocket\r\n"
@@ -508,11 +522,12 @@ class WebSocketClient:
         start_line, headers = _parse_headers(raw)
         if " 101 " not in f" {start_line} ":
             raise WebSocketProtocolError(f"WebSocket server rejected handshake: {start_line}")
-        expected = base64.b64encode(hashlib.sha1((key + GUID).encode("ascii")).digest()).decode("ascii")
+        expected = _websocket_accept_digest(key + GUID)
         if headers.get("sec-websocket-accept") != expected:
             raise WebSocketProtocolError("Invalid Sec-WebSocket-Accept response")
         sock.settimeout(None)
         self.peer = WebSocketPeer(sock, client_mode=True, max_frame_bytes=self.max_frame_bytes)
+        time.sleep(0.01)
         return self
 
     def reconnect(self, *, delay: float = 0.1, attempts: int = 3) -> "WebSocketClient":
