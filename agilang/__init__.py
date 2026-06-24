@@ -18,7 +18,7 @@ from .mobile_runtime import mobile_runtime_matrix, mobile_runtime_capabilities, 
 from .lowlevel_network import tcp_listen, tcp_connect, udp_socket, packet_frame, packet_unframe, packet_json, packet_json_parse, gossip_node, lowlevel_network_capabilities
 from .evm import evm_capabilities, evm_keccak, evm_function_selector, evm_abi_encode, evm_abi_decode, evm_contract_call_data, evm_bytecode_builder, evm_disassemble, evm_execute, evm_simulate_call, evm_estimate_gas, evm_trace, evm_world_state, evm_interpreter, evm_rpc, evm_rlp_encode, evm_legacy_unsigned_tx, evm_external_engine
 from .interop import python_package, python_package_status, native_library, capability_manifest, interop_capabilities, systems_capabilities
-from .zk import zk_capabilities, zk_field, zk_circuit, zk_commit, zk_verify_commit, zk_merkle_tree, zk_merkle_proof, zk_verify_merkle_proof, zk_nullifier, zk_schnorr_keypair, zk_schnorr_prove, zk_schnorr_verify, zk_bridge_status, zk_external_engine, zk_demo_payload
+from .zk import zk_capabilities, zk_field, zk_circuit, zk_commit, zk_verify_commitment as zk_verify_commit, zk_merkle_tree, zk_merkle_proof, zk_verify_merkle_proof, zk_nullifier, zk_schnorr_keypair, zk_schnorr_prove, zk_schnorr_verify, zk_bridge_status, zk_external_engine, zk_demo_payload
 
 from .blockchain import blockchain_capabilities, blockchain_config, blockchain_mainnet_config, blockchain_transaction, blockchain_merkle_root, blockchain_node, blockchain_devnet, blockchain_consensus_simulation, blockchain_demo, consensus_engine, pos_consensus_engine, dpos_consensus_engine, dev_consensus_engine, BlockchainNode, BlockchainConfig, ProofOfStakeEngine, DelegatedProofOfStakeEngine, DevConsensusEngine, Mempool, ChainDatabase
 
