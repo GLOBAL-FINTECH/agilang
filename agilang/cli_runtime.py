@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 from .beacon import (
@@ -164,13 +165,53 @@ def _start(args):
     if mode in {"sbq-beacon", "beacon"}:
         store = BeaconStore("storage/beacon.sqlite")
         state = store.load_state()
-        _print_json({
+        continuous = bool(getattr(args, "continuous", False))
+        if args.dry_run or not continuous:
+            _print_json({
+                "ok": True,
+                "mode": "sbq-beacon",
+                "dry_run": bool(args.dry_run),
+                "continuous": continuous,
+                "message": "Native SBQ Beacon runtime plan is valid. Add --continuous to keep producing/attesting/finalizing slots until stopped, or use --max-slots for a bounded test run.",
+                "state": state.as_dict(),
+            })
+            return
+
+        slot_seconds = max(1, int(getattr(args, "slot_seconds", 0) or state.config.slot_seconds))
+        max_slots = int(getattr(args, "max_slots", 0) or 0)
+        produced = 0
+        print(json.dumps({
             "ok": True,
             "mode": "sbq-beacon",
-            "dry_run": bool(args.dry_run),
-            "message": "Native SBQ Beacon runtime plan is valid. Use beacon commands for local block/attestation/finality steps; long-running supervision should be enabled by the chain host runtime.",
-            "state": state.as_dict(),
-        })
+            "continuous": True,
+            "slot_seconds": slot_seconds,
+            "max_slots": max_slots,
+            "message": "AGILANG/SBQ continuous beacon loop started. Press Ctrl+C to stop.",
+            "start_slot": state.current_slot,
+        }, sort_keys=True))
+        try:
+            while True:
+                block = produce_beacon_block(state)
+                attestations = attest_to_head(state)
+                finality = process_epoch_finality(state, attestations) if block.slot % state.config.slots_per_epoch == 0 else None
+                head = fork_choice_head(state)
+                store.save_state(state)
+                produced += 1
+                print(json.dumps({
+                    "event": "slot",
+                    "slot": block.slot,
+                    "epoch": block.epoch,
+                    "block_root": block.root,
+                    "proposer": block.proposer,
+                    "attestations": len(attestations),
+                    "head": head.get("head", state.head_root) if isinstance(head, dict) else state.head_root,
+                    "finality": finality,
+                }, sort_keys=True))
+                if max_slots and produced >= max_slots:
+                    break
+                time.sleep(slot_seconds)
+        except KeyboardInterrupt:
+            print(json.dumps({"event": "stopped", "reason": "keyboard_interrupt", "last_slot": state.current_slot}, sort_keys=True))
         return
     if mode != "ethereum-consensus-replica":
         _print_json({"ok": False, "error": "unsupported_mode", "mode": mode})
@@ -182,7 +223,8 @@ def _start(args):
         "mode": mode,
         "config_path": args.config,
         "dry_run": bool(args.dry_run),
-        "message": "Ethereum PoS replica runtime plan is valid. Long-running service supervision should be enabled by the chain host runtime.",
+        "continuous": bool(getattr(args, "continuous", False)),
+        "message": "Ethereum PoS replica runtime plan is valid. Long-running serving must still be supervised and must not be used as an Ethereum mainnet validator replacement.",
         "check": check,
         "services": cfg.as_dict()["endpoints"],
     })
@@ -251,6 +293,9 @@ def _handle_chain(argv: list[str]) -> bool:
         parser.add_argument("--mode", required=True)
         parser.add_argument("--config", default="config/network.json")
         parser.add_argument("--dry-run", action="store_true")
+        parser.add_argument("--continuous", action="store_true", help="Keep the local chain loop running until Ctrl+C or --max-slots is reached")
+        parser.add_argument("--slot-seconds", type=int, default=0, help="Override local beacon slot interval for continuous mode")
+        parser.add_argument("--max-slots", type=int, default=0, help="Stop after this many produced slots; 0 means run until interrupted")
         _start(parser.parse_args(argv[2:]))
         return True
 
@@ -291,6 +336,53 @@ def _handle_beacon(argv: list[str]) -> bool:
         _print_json(init_beacon_runtime(args.path, cfg))
         return True
 
+    if command == "status":
+        store = _load_beacon_store()
+        state = store.load_state()
+        _print_json({
+            "ok": True,
+            "head": state.head_root,
+            "slot": state.current_slot,
+            "epoch": state.config.epoch_for_slot(state.current_slot),
+            "validators": len(state.validators),
+            "justified_checkpoint": state.justified_checkpoint.as_dict(),
+            "finalized_checkpoint": state.finalized_checkpoint.as_dict(),
+        })
+        return True
+
+    if command == "produce-block":
+        store = _load_beacon_store()
+        state = store.load_state()
+        block = produce_beacon_block(state)
+        store.save_state(state)
+        _print_json({"ok": True, "block": block.as_dict(), "state": state.as_dict()})
+        return True
+
+    if command == "attest":
+        store = _load_beacon_store()
+        state = store.load_state()
+        attestations = attest_to_head(state)
+        store.save_state(state)
+        _print_json({"ok": True, "attestations": [a.as_dict() for a in attestations]})
+        return True
+
+    if command == "finalize":
+        store = _load_beacon_store()
+        state = store.load_state()
+        attestations = attest_to_head(state)
+        result = process_epoch_finality(state, attestations)
+        store.save_state(state)
+        _print_json({"ok": True, "finality": result, "state": state.as_dict()})
+        return True
+
+    if command == "fork-choice":
+        store = _load_beacon_store()
+        state = store.load_state()
+        result = fork_choice_head(state)
+        store.save_state(state)
+        _print_json(result)
+        return True
+
     if command == "simulate":
         parser = argparse.ArgumentParser(prog="agi beacon simulate")
         parser.add_argument("--validators", type=int, default=64)
@@ -301,55 +393,21 @@ def _handle_beacon(argv: list[str]) -> bool:
         _print_json(simulate_beacon(args.validators, args.epochs, args.slot_seconds, args.slots_per_epoch))
         return True
 
-    store = _load_beacon_store()
-    state = store.load_state()
-
-    if command == "status":
-        _print_json({"ok": True, "state": state.as_dict()})
-        return True
-
-    if command == "validators":
-        _print_json({"ok": True, "validators": [v.as_dict() for v in state.validators]})
-        return True
-
-    if command == "produce-block":
-        block = produce_beacon_block(state)
-        store.save_state(state)
-        _print_json({"ok": True, "block": block.as_dict(), "state": state.as_dict()})
-        return True
-
-    if command == "attest":
-        attestations = attest_to_head(state)
-        store.save_state(state)
-        _print_json({"ok": True, "attestations": [a.as_dict() for a in attestations], "state": state.as_dict()})
-        return True
-
-    if command == "finalize":
-        result = process_epoch_finality(state)
-        store.save_state(state)
-        _print_json(result)
-        return True
-
-    if command == "fork-choice":
-        result = fork_choice_head(state)
-        store.save_state(state)
-        _print_json(result)
-        return True
-
-    _print_json({"ok": False, "error": "unsupported_beacon_command", "command": command})
-    raise SystemExit(1)
+    return False
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
+
     if _handle_new(args):
-        return
-    if _handle_beacon(args):
-        return
+        return 0
     if _handle_chain(args):
-        return
-    from .cli import main as legacy_main
-    legacy_main()
+        return 0
+    if _handle_beacon(args):
+        return 0
+
+    from .cli import main as base_main
+    return base_main(args)
 
 
 if __name__ == "__main__":
