@@ -21,7 +21,7 @@ dependencies = []
 
 [project.optional-dependencies]
 data = ["numpy", "scikit-learn", "matplotlib", "requests"]
-dev = ["pytest"]
+dev = ["pytest", "bandit[toml]", "pip-audit", "ruff"]
 
 [project.scripts]
 agilang = "agilang.cli_runtime:main"
@@ -37,3 +37,10 @@ include-package-data = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.bandit]
+skips = ["B101"]
+exclude_dirs = ["tests", "examples"]
+
+[tool.ruff]
+line-length = 120
