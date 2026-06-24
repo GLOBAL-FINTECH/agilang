@@ -43,3 +43,13 @@ def test_blockchain_generator_emits_local_and_production_profiles(tmp_path: Path
     assert 'Local/devnet profile' in docs
     assert 'Production/staging profile' in docs
     assert 'External validator beacon node' in docs
+
+
+def test_blockchain_generator_keeps_generated_app_agilang_native(tmp_path: Path) -> None:
+    result = generate_blockchain_app('Native Chain', tmp_path, force=True)
+    root = Path(result['root'])
+    assert (root / 'src' / 'main.agi').exists()
+    assert (root / 'src' / 'chain.agi').exists()
+    assert (root / 'src' / 'rpc.agi').exists()
+    assert (root / 'resources' / 'views' / 'explorer.ags').exists()
+    assert not list((root / 'scripts').glob('*.py')) if (root / 'scripts').exists() else True
