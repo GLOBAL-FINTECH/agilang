@@ -36,7 +36,7 @@ jobs:
       - name: Verify generated runtime manifest
         run: python -m agilang.cli runtime platform-matrix
       - name: Upload prebuilt runtime artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: |
@@ -55,7 +55,7 @@ jobs:
       - name: Generate Android/iOS runtime target manifests
         run: python scripts/build_mobile_prebuilt_runtime.py --target all
       - name: Upload mobile runtime target manifests
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: agilang-mobile-runtime-targets
           path: agilang/native/prebuilt/**
