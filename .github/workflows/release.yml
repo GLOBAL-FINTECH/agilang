@@ -72,7 +72,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Download prebuilt runtimes
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: downloaded-prebuilt
       - name: Merge prebuilt runtimes into package tree
