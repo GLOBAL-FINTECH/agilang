@@ -1,4 +1,4 @@
-"""Runtime CLI shim for AGILANG blockchain/Ethereum consensus commands."""
+"""Runtime CLI shim for AGILANG app, AI, blockchain, and beacon commands."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import argparse
 import json
 import sys
 import time
-from pathlib import Path
 
+from .ai_runtime_generator import generate_ai_runtime_app
 from .beacon import (
     BeaconConfig,
     BeaconStore,
@@ -35,11 +35,11 @@ def _print_json(value):
 
 
 def _safe_project_name(parts: list[str]) -> str:
-    raw = "-".join(part.strip() for part in parts if part.strip()) or "my-chain"
+    raw = "-".join(part.strip() for part in parts if part.strip()) or "my-app"
     cleaned = "".join(ch.lower() if ch.isalnum() else "-" for ch in raw)
     while "--" in cleaned:
         cleaned = cleaned.replace("--", "-")
-    return cleaned.strip("-") or "my-chain"
+    return cleaned.strip("-") or "my-app"
 
 
 def _handle_new(argv: list[str]) -> bool:
@@ -47,6 +47,27 @@ def _handle_new(argv: list[str]) -> bool:
         return False
     template_idx = argv.index("--template")
     template = argv[template_idx + 1] if template_idx + 1 < len(argv) else ""
+
+    if template in {"ai", "aiflow", "ai-runtime"}:
+        parser = argparse.ArgumentParser(prog="agi new <name> --template ai")
+        parser.add_argument("name", nargs="*")
+        parser.add_argument("--template", required=True)
+        parser.add_argument("--force", action="store_true")
+        parser.add_argument("--no-vendor", action="store_true", help="Do not copy the runtime into vendor/agilang")
+        args = parser.parse_args(argv[1:])
+        name = _safe_project_name(args.name)
+        generated = generate_ai_runtime_app(name, ".", force=bool(args.force), vendor=not bool(args.no_vendor))
+        vendor = {"ok": True, "vendored": False, "reason": "disabled"}
+        if not args.no_vendor:
+            vendor = copy_runtime_vendor(generated["root"], force=bool(args.force))
+        result = dict(generated)
+        result["standalone_runtime"] = vendor
+        result["project_surface"] = "agi"
+        result["python_launchers"] = False
+        print(f"Created AGILANG AI runtime project: {generated['root']}")
+        _print_json(result)
+        return True
+
     if template != "blockchain":
         return False
 
@@ -62,15 +83,7 @@ def _handle_new(argv: list[str]) -> bool:
     args = parser.parse_args(argv[1:])
 
     name = _safe_project_name(args.name)
-    generated = generate_blockchain_app(
-        name,
-        ".",
-        force=bool(args.force),
-        chain_id=int(args.chain_id),
-        symbol=str(args.symbol),
-        decimals=int(args.decimals),
-        mode=str(args.mode),
-    )
+    generated = generate_blockchain_app(name, ".", force=bool(args.force), chain_id=int(args.chain_id), symbol=str(args.symbol), decimals=int(args.decimals), mode=str(args.mode))
     vendor = {"ok": True, "vendored": False, "reason": "disabled"}
     if not args.no_vendor:
         vendor = copy_runtime_vendor(generated["root"], force=bool(args.force))
@@ -91,17 +104,7 @@ def _consensus_replacement_plan(args):
         "requested_consensus": consensus,
         "agilang_legacy_consensus_preserved": True,
         "ethereum_derived_fork_default": consensus == "ethereum-pos-replica",
-        "architecture": {
-            "execution_consensus_split": True,
-            "slot_seconds": 12,
-            "slots_per_epoch": 32,
-            "proposer_duties": True,
-            "attestation_committees": True,
-            "lmd_ghost_style_head_choice": True,
-            "casper_ffg_style_finality": True,
-            "private_engine_api_boundary": True,
-            "private_beacon_api": True,
-        },
+        "architecture": {"execution_consensus_split": True, "slot_seconds": 12, "slots_per_epoch": 32, "proposer_duties": True, "attestation_committees": True, "lmd_ghost_style_head_choice": True, "casper_ffg_style_finality": True, "private_engine_api_boundary": True, "private_beacon_api": True},
         "production_boundary": "Private/custom Ethereum-derived forks only. Live Ethereum mainnet validation requires official Ethereum clients.",
     }
     _print_json(plan)
