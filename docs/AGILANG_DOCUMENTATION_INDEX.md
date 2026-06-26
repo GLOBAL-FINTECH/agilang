@@ -26,6 +26,7 @@ This index organizes the AGILANG documentation into a clear beginner-to-professi
 | `docs/AGILANG_AI_BLOCKCHAIN_DEEP_REFERENCE.md` | AIFlow, AGIRecord, image preprocessing, CNNs, tokenizer, language models, TorchCompat, ONNX, GPU gates, distributed runtime, blockchain, RPC, beacon and validators |
 | `docs/AGILANG_DOCS_AI_TRAINING_TEST.md` | How to train and test a small local AGILANG docs AI model from README/WIKI/docs Markdown files |
 | `docs/AGILANG_DOCS_AI_QA_AND_CODE_DEMO.md` | How to inspect AGILANG docs AI questions, answers, code-writing tasks and generated Markdown/JSON reports |
+| `docs/AGILANG_DOCS_AI_CLEAN_ASK.md` | Clean docs AI ask command with intent detection, clean answers, isolated code blocks and ranked sources |
 | `docs/AIFLOW_PRODUCTION_UPGRADE.md` | AIFlow production upgrade boundaries, commands and deployment gates |
 
 ---
@@ -123,6 +124,7 @@ docs/AIFLOW_PRODUCTION_UPGRADE.md
 docs/AGILANG_AI_BLOCKCHAIN_DEEP_REFERENCE.md
 docs/AGILANG_DOCS_AI_TRAINING_TEST.md
 docs/AGILANG_DOCS_AI_QA_AND_CODE_DEMO.md
+docs/AGILANG_DOCS_AI_CLEAN_ASK.md
 ```
 
 Practice:
@@ -136,6 +138,7 @@ agi ai onnx-status
 agi ai gpu-status
 python tools/train_agilab_docs_ai.py --root . --out storage/agilab-docs-ai --smoke-test
 python tools/docs_ai_qa_demo.py --model-dir storage/agilab-docs-ai --out storage/agilab-docs-ai/demo
+python tools/docs_ai_ask.py --model-dir storage/agilab-docs-ai --question "How do I create a blockchain project in AGILANG?" --pretty
 ```
 
 ---
@@ -176,12 +179,13 @@ agi chain status --root .
 agi chain ethereum-consensus-check
 ```
 
-For AGILANG docs AI training and Q&A/code demo:
+For AGILANG docs AI training, Q&A/code demo, and clean ask:
 
 ```bash
 python tools/train_agilab_docs_ai.py --root . --out storage/agilab-docs-ai --ask "What is AGILANG?"
 python tools/docs_ai_qa_demo.py --model-dir storage/agilab-docs-ai --out storage/agilab-docs-ai/demo
-python -m pytest tests/test_docs_ai_trainer.py tests/test_docs_ai_qa_demo.py -q
+python tools/docs_ai_ask.py --model-dir storage/agilab-docs-ai --question "What is AGILANG?" --pretty
+python -m pytest tests/test_docs_ai_trainer.py tests/test_docs_ai_qa_demo.py tests/test_docs_ai_answer_composer.py -q
 ```
 
 ---
@@ -209,5 +213,5 @@ Not implemented yet
 To become a professional AGILANG developer:
 
 ```text
-syntax -> modules -> CLI -> web routes -> controllers -> templates -> auth -> database -> APIs -> errors -> tests -> AIFlow -> docs AI training -> docs AI Q&A/code tasks -> blockchain -> deployment
+syntax -> modules -> CLI -> web routes -> controllers -> templates -> auth -> database -> APIs -> errors -> tests -> AIFlow -> docs AI training -> docs AI Q&A/code tasks -> clean docs AI ask -> blockchain -> deployment
 ```
