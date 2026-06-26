@@ -26,6 +26,7 @@ from .ai_platform import ai_capabilities, ai_deployment_gate, require_ai_capabil
 from .bpe_tokenizer import BPETokenizer, train_bpe_tokenizer, load_bpe_tokenizer
 from .distributed_runtime import DistributedRuntime, DistributedConfig, WorkerSpec, distributed_runtime, distributed_capabilities
 from .gpu_kernel_registry import GPUKernelRegistry, default_registry as ai_kernel_registry, dispatch_kernel, backend_status as ai_backend_status
+from .image_ops import load_image, save_image, image_preprocess, resize_bilinear, resize_nearest, rgb_to_grayscale, normalize_channels
 from .llm_trainer import LanguageModelBundle, NGramLanguageModel, train_ngram_lm, load_language_model
 from .onnx_tier1_runtime import ONNXModel, load_onnx_model, onnx_runtime_status
 from .transformer_runtime import ProductionTransformerRuntime, TransformerConfig, transformer_runtime, load_transformer_runtime
@@ -124,6 +125,13 @@ __all__ = [
     "BPETokenizer",
     "train_bpe_tokenizer",
     "load_bpe_tokenizer",
+    "load_image",
+    "save_image",
+    "image_preprocess",
+    "resize_bilinear",
+    "resize_nearest",
+    "rgb_to_grayscale",
+    "normalize_channels",
     "LanguageModelBundle",
     "NGramLanguageModel",
     "train_ngram_lm",
