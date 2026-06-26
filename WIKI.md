@@ -1,6 +1,6 @@
 # AGILANG Wiki
 
-Welcome to the AGILANG wiki index. This page maps the complete AGILANG learning path from beginner syntax to professional full-stack development, AIFlow, docs AI training, docs AI Q&A/code tasks, and blockchain.
+Welcome to the AGILANG wiki index. This page maps the complete AGILANG learning path from beginner syntax to professional full-stack development, AIFlow, docs AI training, docs AI Q&A/code tasks, clean docs AI ask, and blockchain.
 
 ---
 
@@ -34,6 +34,7 @@ docs/AGILANG_DOCUMENTATION_INDEX.md
 | `docs/AGILANG_AI_BLOCKCHAIN_DEEP_REFERENCE.md` | AIFlow, TorchCompat, ONNX, GPU gates, distributed runtime, blockchain, RPC, beacon and validators |
 | `docs/AGILANG_DOCS_AI_TRAINING_TEST.md` | Train and test a small local AGILANG docs AI model from README/WIKI/docs Markdown files |
 | `docs/AGILANG_DOCS_AI_QA_AND_CODE_DEMO.md` | Inspect AGILANG docs AI questions, answers, code-writing tasks and generated Markdown/JSON reports |
+| `docs/AGILANG_DOCS_AI_CLEAN_ASK.md` | Clean docs AI ask command with intent detection, clean answers, isolated code blocks and ranked sources |
 | `docs/AIFLOW_PRODUCTION_UPGRADE.md` | AIFlow production upgrade details and boundaries |
 
 ---
@@ -62,6 +63,7 @@ docs/AGILANG_DOCUMENTATION_INDEX.md
 - AIFlow usage
 - docs-based local AI training
 - docs AI Q&A and code-writing task reports
+- clean docs AI ask answers
 - TorchCompat
 - ONNX bridge
 - GPU backend gates
@@ -86,7 +88,8 @@ docs/AGILANG_DOCUMENTATION_INDEX.md
 7. AI/blockchain deep reference
 8. Docs AI training test
 9. Docs AI Q&A/code task demo
-10. AIFlow production upgrade notes
+10. Clean docs AI ask
+11. AIFlow production upgrade notes
 ```
 
 ---
@@ -110,13 +113,14 @@ python -m compileall -q agilang tests
 python -m pytest
 ```
 
-For docs AI training and Q&A/code demo:
+For docs AI training, Q&A/code demo, and clean ask:
 
 ```bash
 python tools/train_agilab_docs_ai.py --root . --out storage/agilab-docs-ai --smoke-test
 python tools/train_agilab_docs_ai.py --root . --out storage/agilab-docs-ai --ask "What is AGILANG?"
 python tools/docs_ai_qa_demo.py --model-dir storage/agilab-docs-ai --out storage/agilab-docs-ai/demo
-python -m pytest tests/test_docs_ai_trainer.py tests/test_docs_ai_qa_demo.py -q
+python tools/docs_ai_ask.py --model-dir storage/agilab-docs-ai --question "How do I create a blockchain project in AGILANG?" --pretty
+python -m pytest tests/test_docs_ai_trainer.py tests/test_docs_ai_qa_demo.py tests/test_docs_ai_answer_composer.py -q
 ```
 
 For blockchain projects:
