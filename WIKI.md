@@ -1,6 +1,6 @@
 # AGILANG Wiki
 
-Welcome to the AGILANG wiki index. This page maps the complete AGILANG learning path from beginner syntax to professional full-stack development, AIFlow, docs AI training, and blockchain.
+Welcome to the AGILANG wiki index. This page maps the complete AGILANG learning path from beginner syntax to professional full-stack development, AIFlow, docs AI training, docs AI Q&A/code tasks, and blockchain.
 
 ---
 
@@ -33,6 +33,7 @@ docs/AGILANG_DOCUMENTATION_INDEX.md
 | `docs/AGILANG_ERROR_DEBUGGING_DEEP_REFERENCE.md` | 404, 500, 422, 401, 403, 419, 429, logging, debugging and incident response |
 | `docs/AGILANG_AI_BLOCKCHAIN_DEEP_REFERENCE.md` | AIFlow, TorchCompat, ONNX, GPU gates, distributed runtime, blockchain, RPC, beacon and validators |
 | `docs/AGILANG_DOCS_AI_TRAINING_TEST.md` | Train and test a small local AGILANG docs AI model from README/WIKI/docs Markdown files |
+| `docs/AGILANG_DOCS_AI_QA_AND_CODE_DEMO.md` | Inspect AGILANG docs AI questions, answers, code-writing tasks and generated Markdown/JSON reports |
 | `docs/AIFLOW_PRODUCTION_UPGRADE.md` | AIFlow production upgrade details and boundaries |
 
 ---
@@ -60,6 +61,7 @@ docs/AGILANG_DOCUMENTATION_INDEX.md
 - debugging and testing
 - AIFlow usage
 - docs-based local AI training
+- docs AI Q&A and code-writing task reports
 - TorchCompat
 - ONNX bridge
 - GPU backend gates
@@ -83,7 +85,8 @@ docs/AGILANG_DOCUMENTATION_INDEX.md
 6. Error/debugging deep reference
 7. AI/blockchain deep reference
 8. Docs AI training test
-9. AIFlow production upgrade notes
+9. Docs AI Q&A/code task demo
+10. AIFlow production upgrade notes
 ```
 
 ---
@@ -107,12 +110,13 @@ python -m compileall -q agilang tests
 python -m pytest
 ```
 
-For docs AI training:
+For docs AI training and Q&A/code demo:
 
 ```bash
 python tools/train_agilab_docs_ai.py --root . --out storage/agilab-docs-ai --smoke-test
 python tools/train_agilab_docs_ai.py --root . --out storage/agilab-docs-ai --ask "What is AGILANG?"
-python -m pytest tests/test_docs_ai_trainer.py -q
+python tools/docs_ai_qa_demo.py --model-dir storage/agilab-docs-ai --out storage/agilab-docs-ai/demo
+python -m pytest tests/test_docs_ai_trainer.py tests/test_docs_ai_qa_demo.py -q
 ```
 
 For blockchain projects:
