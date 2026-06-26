@@ -8,8 +8,9 @@ from agilang.distributed_runtime import DistributedConfig, DistributedRuntime, W
 from agilang.gpu_kernel_registry import default_registry, dispatch_kernel
 from agilang.image_ops import image_preprocess, load_image, resize_bilinear, rgb_to_grayscale, save_image
 from agilang.llm_trainer import LanguageModelBundle, train_ngram_lm
+from agilang.ndtensor import ndtensor
 from agilang.onnx_tier1_runtime import execute_graph, onnx_runtime_status
-from agilang.torch_compat import Tensor, mse_loss, nn, optim, tensor, torch_compat_status
+from agilang.torch_compat import Tensor, mse_loss, nn, ones, optim, tensor, torch_compat_status, zeros
 from agilang.transformer_runtime import ProductionTransformerRuntime
 
 
@@ -121,6 +122,15 @@ def test_torch_compat_tensor_module_optimizer_and_status(tmp_path):
     path = save(y, tmp_path / "tensor.json")
     loaded = load(path)
     assert isinstance(loaded, Tensor)
+
+
+def test_torch_compat_arithmetic_and_recursive_shapes():
+    assert ndtensor([[[1, 2], [3, 4]]]).shape == (1, 2, 2)
+    assert zeros((1, 2, 2)).shape == (1, 2, 2)
+    assert ones((1, 2, 2)).tolist() == [[[1.0, 1.0], [1.0, 1.0]]]
+    x = tensor([[1.0, 2.0]])
+    assert (10.0 - x).tolist() == [[9.0, 8.0]]
+    assert (x / 2.0).tolist() == [[0.5, 1.0]]
 
 
 def test_native_gpu_status_and_ai_report():
