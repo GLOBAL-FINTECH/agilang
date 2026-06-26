@@ -24,11 +24,13 @@ from .blockchain import blockchain_capabilities, blockchain_config, blockchain_m
 
 from .ai_platform import ai_capabilities, ai_deployment_gate, require_ai_capability
 from .bpe_tokenizer import BPETokenizer, train_bpe_tokenizer, load_bpe_tokenizer
+from .cuda_backend import native_gpu_status, require_native_gpu
 from .distributed_runtime import DistributedRuntime, DistributedConfig, WorkerSpec, distributed_runtime, distributed_capabilities
 from .gpu_kernel_registry import GPUKernelRegistry, default_registry as ai_kernel_registry, dispatch_kernel, backend_status as ai_backend_status
 from .image_ops import load_image, save_image, image_preprocess, resize_bilinear, resize_nearest, rgb_to_grayscale, normalize_channels
 from .llm_trainer import LanguageModelBundle, NGramLanguageModel, train_ngram_lm, load_language_model
 from .onnx_tier1_runtime import ONNXModel, load_onnx_model, onnx_runtime_status
+from .torch_compat import Tensor as TorchCompatTensor, tensor as torch_tensor, nn as torch_nn, optim as torch_optim, torch_compat_status
 from .transformer_runtime import ProductionTransformerRuntime, TransformerConfig, transformer_runtime, load_transformer_runtime
 
 try:
@@ -132,6 +134,13 @@ __all__ = [
     "resize_nearest",
     "rgb_to_grayscale",
     "normalize_channels",
+    "native_gpu_status",
+    "require_native_gpu",
+    "TorchCompatTensor",
+    "torch_tensor",
+    "torch_nn",
+    "torch_optim",
+    "torch_compat_status",
     "LanguageModelBundle",
     "NGramLanguageModel",
     "train_ngram_lm",
