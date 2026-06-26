@@ -11,6 +11,45 @@ learn AGILANG -> create an app -> run .agi files -> train AI models -> deploy
 
 ---
 
+## Main branch update status
+
+The `main` branch now includes the AIFlow production-facing upgrade:
+
+```text
+✅ TorchCompat PyTorch-style API surface
+✅ Recursive NDTensor shapes
+✅ Tensor arithmetic hardening
+✅ Native GPU shared-library status gate
+✅ AIFlow CLI commands
+✅ Image preprocessing pipeline
+✅ ONNX Runtime bridge
+✅ Distributed runtime coordinator
+✅ GitHub Actions test workflow
+```
+
+Key files now present on `main`:
+
+```text
+agilang/torch_compat.py
+agilang/cuda_backend.py
+agilang/ndtensor.py
+agilang/ai_platform.py
+agilang/image_ops.py
+agilang/cli_runtime.py
+tests/test_aiflow_production_upgrade.py
+.github/workflows/tests.yml
+docs/AIFLOW_PRODUCTION_UPGRADE.md
+```
+
+Run the new validation path:
+
+```bash
+python -m pytest tests/test_aiflow_production_upgrade.py
+python -m pytest
+```
+
+---
+
 ## What AGILANG includes
 
 | Area | Capability |
@@ -19,7 +58,7 @@ learn AGILANG -> create an app -> run .agi files -> train AI models -> deploy
 | Templates | `.ags` reactive templates |
 | Web framework | Laravel-style app structure, routes, controllers, config, auth pages |
 | Blockchain | SBQ/EVM-style app generator, beacon, validators, RPC, mempool, consensus profile |
-| AIFlow | Native ML, CNN training, AGIRecord datasets, BPE tokenizer, transformer starter, ONNX reference runtime |
+| AIFlow | Native ML, CNN training, AGIRecord datasets, BPE tokenizer, transformer runtime, ONNX bridge, TorchCompat, native GPU gate |
 | Deployment | Vendored runtime support for portable generated projects |
 
 ---
@@ -260,12 +299,18 @@ flip_left_right
 flip_top_bottom
 crop_center
 resize_nearest
+resize_bilinear
+load_image
+save_image
+image_preprocess
+rgb_to_grayscale
+normalize_channels
 ```
 
 Tests:
 
 ```bash
-python -m pytest tests/test_ai_platform_100.py -q
+python -m pytest tests/test_aiflow_production_upgrade.py -q
 ```
 
 ---
@@ -278,12 +323,14 @@ Files:
 agilang/ndtensor.py
 agilang/ndtensor_broadcast.py
 agilang/aiflow_native.py
+agilang/torch_compat.py
 ```
 
 Capabilities:
 
 ```text
 NDTensor
+recursive tensor shapes
 variable
 matmul
 mse
@@ -291,12 +338,15 @@ softmax
 reverse-mode autodiff
 SGD step
 native dense training
+TorchCompat Tensor
+TorchCompat nn.Module / Linear / Sequential
+TorchCompat optim.SGD
 ```
 
 Tests:
 
 ```bash
-python -m pytest tests/test_ndtensor.py tests/test_aiflow_native.py -q
+python -m pytest tests/test_ndtensor.py tests/test_aiflow_native.py tests/test_aiflow_production_upgrade.py -q
 ```
 
 ---
@@ -395,9 +445,10 @@ Capabilities:
 
 ```text
 word tokenizer
-BPE tokenizer starter
-tiny language model training
+BPE tokenizer train/encode/decode/save/load
+small tokenizer-backed language model training
 next-token prediction
+perplexity
 .agi-model save/load
 ```
 
@@ -410,7 +461,7 @@ agi run llm.agi
 Tests:
 
 ```bash
-python -m pytest tests/test_ai_platform_100.py tests/test_ai_final_execution_layer.py -q
+python -m pytest tests/test_aiflow_production_upgrade.py -q
 ```
 
 ---
@@ -435,6 +486,10 @@ attention_scores
 attention_pool
 feed_forward
 transformer_block
+ProductionTransformerRuntime
+multi-head attention reference path
+causal masking
+save/load
 ```
 
 Command:
@@ -445,7 +500,7 @@ agi run transformer.agi
 
 ---
 
-## 7. ONNX Tier 1 reference runtime
+## 7. ONNX Tier 1 reference runtime and bridge
 
 File:
 
@@ -468,13 +523,21 @@ Transpose
 Gemm
 ```
 
+Production bridge:
+
+```text
+load_onnx_model()
+onnx_runtime_status()
+optional onnxruntime execution for real .onnx files
+```
+
 Command:
 
 ```bash
 agi run onnx.agi
 ```
 
-Boundary: this is a reference executor for descriptor dictionaries. Full ONNX file parsing and complete operator coverage are production-hardening work.
+Boundary: descriptor execution is local. Real `.onnx` execution requires `onnxruntime`.
 
 ---
 
@@ -485,6 +548,7 @@ Files:
 ```text
 agilang/gpu_runtime_plan.py
 agilang/gpu_kernel_registry.py
+agilang/cuda_backend.py
 ```
 
 Capabilities:
@@ -496,6 +560,9 @@ DirectML backend detection plan
 Metal backend detection plan
 CPU fallback
 kernel registry for matmul, conv2d, relu, softmax, attention
+native GPU shared-library discovery
+native_gpu_status()
+require_native_gpu()
 ```
 
 Command:
@@ -504,7 +571,7 @@ Command:
 agi run gpu.agi
 ```
 
-Boundary: GPU dispatch points exist. Production CUDA/ROCm/DirectML/Metal kernels still need hardware-specific implementation.
+Boundary: CPU and optional external GPU backend dispatch exists. Full native CUDA parity still requires compiled shared libraries and GPU CI.
 
 ---
 
@@ -524,6 +591,7 @@ training node descriptors
 distributed strategy planner
 shard planner
 local allreduce average reference
+shared-filesystem allreduce coordinator
 ```
 
 Command:
@@ -532,7 +600,7 @@ Command:
 agi run distributed.agi
 ```
 
-Boundary: local distributed math is implemented. Real network transport and multi-node execution are future production work.
+Boundary: local and filesystem coordination are implemented. High-throughput cluster execution should bridge to NCCL/MPI/Ray/Torch Distributed.
 
 ---
 
@@ -583,6 +651,7 @@ python -m pytest \
   tests/test_ai_platform_100.py \
   tests/test_ai_final_execution_layer.py \
   tests/test_ai_runtime_generator.py \
+  tests/test_aiflow_production_upgrade.py \
   -q
 ```
 
@@ -691,20 +760,21 @@ AGS is the default template engine. React, Vue, and raw HTML should remain optio
 AGILANG AIFlow now has a complete reference execution foundation:
 
 ```text
-dataset -> preprocessing -> CNN training -> model save/load -> tokenizer -> transformer starter -> ONNX reference -> GPU planner -> distributed planner
+dataset -> preprocessing -> CNN training -> model save/load -> tokenizer -> transformer runtime -> ONNX bridge -> TorchCompat -> GPU gate -> distributed coordinator
 ```
 
-Still required for production parity with TensorFlow/PyTorch:
+Still required for complete parity with PyTorch/TensorFlow:
 
 ```text
 hardware-optimized CUDA/ROCm/DirectML/Metal kernels
 full ONNX file parser and complete operator coverage
-real multi-node network transport
+real high-throughput multi-node network transport
 large-scale transformer backpropagation
 production LLM checkpointing and serving
+full PyTorch operator/compiler/serialization compatibility
 ```
 
-The current system is suitable as a native AGILANG AI framework foundation and CPU reference runtime. Production acceleration comes next.
+The current system is suitable as a native AGILANG AI framework foundation and CPU/reference runtime. Production acceleration is available through optional backend bridges and native GPU library gates.
 
 ---
 
