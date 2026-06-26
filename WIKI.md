@@ -27,6 +27,7 @@ docs/AGILANG_DOCUMENTATION_INDEX.md
 | `docs/AGILANG_BEGINNER_TO_PROFESSIONAL_WIKI.md` | Beginner-to-professional AGILANG bootcamp/manual |
 | `docs/AGILANG_DOCUMENTATION_INDEX.md` | Documentation map and learning order |
 | `docs/AGILANG_SYNTAX_AND_STDLIB_DEEP_REFERENCE.md` | Deep syntax, standard-library patterns, strings, lists, dictionaries, functions, modules and style |
+| `docs/AGILANG_CLI_AND_DEVELOPER_WORKFLOW_REFERENCE.md` | CLI commands, daily developer workflow, AIFlow commands, blockchain commands, testing, Git workflow and deployment checks |
 | `docs/AGILANG_AGS_TEMPLATE_DEEP_REFERENCE.md` | `.ags` templates, layouts, escaping, forms, errors, dashboards and template safety |
 | `docs/AGILANG_WEB_DATABASE_AUTH_DEEP_REFERENCE.md` | Routes, controllers, APIs, database, auth, sessions, CSRF, middleware and deployment |
 | `docs/AGILANG_ERROR_DEBUGGING_DEEP_REFERENCE.md` | 404, 500, 422, 401, 403, 419, 429, logging, debugging and incident response |
@@ -41,7 +42,7 @@ docs/AGILANG_DOCUMENTATION_INDEX.md
 - variables, constants, functions, conditions and loops
 - strings, lists and dictionaries
 - structs, enums, imports and modules
-- CLI usage
+- CLI usage and daily developer workflow
 - web app project structure
 - routes and controllers
 - `.ags` templates
@@ -74,11 +75,12 @@ docs/AGILANG_DOCUMENTATION_INDEX.md
 ```text
 1. Beginner manual
 2. Syntax and standard-library deep reference
-3. AGS template deep reference
-4. Web/database/auth deep reference
-5. Error/debugging deep reference
-6. AI/blockchain deep reference
-7. AIFlow production upgrade notes
+3. CLI and developer workflow reference
+4. AGS template deep reference
+5. Web/database/auth deep reference
+6. Error/debugging deep reference
+7. AI/blockchain deep reference
+8. AIFlow production upgrade notes
 ```
 
 ---
