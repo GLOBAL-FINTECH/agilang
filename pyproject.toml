@@ -20,7 +20,9 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-data = ["numpy", "scikit-learn", "matplotlib", "requests"]
+data = ["numpy", "scikit-learn", "matplotlib", "requests", "pillow"]
+ai = ["pillow", "onnx", "onnxruntime"]
+ai-gpu = ["pillow", "onnx", "onnxruntime-gpu"]
 dev = ["pytest", "bandit[toml]", "pip-audit", "ruff"]
 
 [project.scripts]
