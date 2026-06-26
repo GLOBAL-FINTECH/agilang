@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from agilang.ai_platform import ai_deployment_gate, require_ai_capability
 from agilang.bpe_tokenizer import BPETokenizer
+from agilang.cli_runtime import main as cli_main
 from agilang.distributed_runtime import DistributedConfig, DistributedRuntime, WorkerSpec, allreduce_average
 from agilang.gpu_kernel_registry import default_registry, dispatch_kernel
+from agilang.image_ops import image_preprocess, load_image, resize_bilinear, rgb_to_grayscale, save_image
 from agilang.llm_trainer import LanguageModelBundle, train_ngram_lm
 from agilang.onnx_tier1_runtime import execute_graph, onnx_runtime_status
 from agilang.transformer_runtime import ProductionTransformerRuntime
@@ -68,3 +70,32 @@ def test_ai_platform_deployment_gate():
     gate = ai_deployment_gate()
     assert gate["ok"] is True
     assert "capabilities" in gate["report"]
+
+
+def test_image_ops_json_load_preprocess_and_save(tmp_path):
+    path = tmp_path / "image.json"
+    save_image(path, [[0, 128], [255, 64]])
+    image = load_image(path)
+    assert image == [[0, 128], [255, 64]]
+    resized = resize_bilinear(image, 4, 4)
+    assert len(resized) == 4
+    assert len(resized[0]) == 4
+    out = image_preprocess(path, rows=2, cols=2, normalize=True)
+    assert max(max(row) for row in out) <= 1.0
+
+
+def test_image_ops_rgb_to_grayscale():
+    gray = rgb_to_grayscale([[[255, 0, 0], [0, 255, 0]]])
+    assert len(gray) == 1
+    assert len(gray[0]) == 2
+    assert gray[0][0] > 0
+
+
+def test_ai_cli_doctor_and_tokenizer_roundtrip(tmp_path, capsys):
+    assert cli_main(["ai", "doctor"]) == 0
+    out = tmp_path / "tok.json"
+    assert cli_main(["ai", "tokenizer-train", "--text", "hello agilang", "--out", str(out), "--merges", "10"]) == 0
+    assert out.exists()
+    assert cli_main(["ai", "tokenizer-encode", "--model", str(out), "--text", "hello agilang"]) == 0
+    captured = capsys.readouterr().out
+    assert "ids" in captured
