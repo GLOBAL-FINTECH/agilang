@@ -1,482 +1,724 @@
-# AGILANG Programming Language / CMS / Blockchain / Blog Starter Kit
+# AGILANG Programming Language, Web Framework, Blockchain Runtime, and AIFlow Platform
 
-> **Main runtime branch:** this branch contains the AGILANG programming language runtime, CLI, parser/runtime tooling, AGS template engine, app scaffolding, blockchain generator, SBQ Beacon layer, EVM/RPC tooling, Ethereum external-client orchestration, and runtime tests. The `blog` branch is the public web/CMS starter branch.
+AGILANG is a modular programming language and application runtime for building web apps, APIs, dashboards, CMS/blog systems, real-time apps, blockchain-enabled applications, and native AI/ML workflows using `.agi` source files and `.ags` reactive templates.
 
-**AGILANG** is a modular programming language and application runtime for building web apps, APIs, dashboards, CMS/blog systems, business apps, real-time apps, and blockchain-enabled applications from one developer-friendly command line.
-
-The goal is simple:
+AGILANG is designed to be simple to learn, lightweight to deploy, and structured like a modern full-stack framework.
 
 ```text
-learn the language -> create an app -> run it locally -> scaffold production-ready modules -> deploy
+learn AGILANG -> create an app -> run .agi files -> train AI models -> deploy
 ```
-
-AGILANG is designed around `.agi` backend/source files and `.ags` reactive view templates. It also includes optional blockchain tooling so developers can generate a configurable SBQ/EVM-style blockchain project without manually assembling the database, node, validator, consensus, RPC, and wallet configuration from scratch.
 
 **License:** MIT  
 **Developed by:** Izukanji Sirwimba, AGILab, Izurex Enterprise Limited
 
 ---
 
-## What AGILANG is
+## What AGILANG includes
 
-AGILANG is both:
-
-1. **A programming language** — syntax, functions, types, structs, enums, imports, and executable `.agi` source files.
-2. **An application runtime** — CLI tools, web server helpers, AGS templates, scaffolds, database helpers, testing helpers, and blockchain/runtime modules.
-
-It is not limited to blockchain. Blockchain is one optional application domain inside the runtime.
-
----
-
-## Recommended starter structure
-
-```text
-cms-starter/
-├─ agilang.toml
-├─ .env.example
-├─ src/
-│  ├─ main.agi
-│  ├─ config.agi
-│  ├─ routes/
-│  │  ├─ web.agi
-│  │  └─ api.agi
-│  ├─ controllers/
-│  ├─ services/
-│  └─ middleware/
-├─ resources/
-│  ├─ views/
-│  │  ├─ layout.ags
-│  │  ├─ home.ags
-│  │  ├─ blog.ags
-│  │  ├─ post.ags
-│  │  ├─ admin-dashboard.ags
-│  │  ├─ login.ags
-│  │  ├─ forgot-password.ags
-│  │  └─ reset-password.ags
-│  └─ assets/
-├─ database/migrations/
-├─ storage/
-├─ public_html/
-└─ tests/
-```
-
----
-
-## Environment and SMTP setup
-
-Create `.env` from `.env.example`:
-
-```env
-APP_NAME="AGILANG CMS Starter"
-APP_ENV=local
-APP_DEBUG=true
-APP_URL=http://127.0.0.1:8000
-APP_SECRET=change-this-secret
-
-DATABASE_PATH=storage/app.sqlite
-
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.example.com
-MAIL_PORT=587
-MAIL_USERNAME=your-email@example.com
-MAIL_PASSWORD=your-smtp-password
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=no-reply@example.com
-MAIL_FROM_NAME="AGILANG CMS"
-
-PASSWORD_RESET_TOKEN_MINUTES=60
-```
-
-Never commit real `.env` credentials.
-
----
-
-## Password reset workflow
-
-The starter should support:
-
-```text
-GET  /forgot-password
-POST /forgot-password
-GET  /reset-password
-POST /reset-password
-```
-
-Safe password reset behavior:
-
-1. User enters email.
-2. App creates secure token.
-3. App stores hashed token.
-4. App emails reset link through SMTP.
-5. User sets new password.
-6. App validates token, expiry, and password confirmation.
-7. App updates password hash and marks token used.
-
-Full guide:
-
-```text
-docs/CMS_BLOG_STARTER_GUIDE.md
-```
-
----
-
-## AGS example
-
-```ags
-@page title="Blog" seo_description="AGILANG CMS blog page."
-@layout "layout.ags"
-@fetch posts from "/api/posts"
-
-<section class="blog-grid">
-  <h1>{{ title }}</h1>
-  <div data-repeat="posts">
-    <article>
-      <h2>{{ item.title }}</h2>
-      <p>{{ item.excerpt }}</p>
-      <a href="/blog/{{ item.slug }}">Read more</a>
-    </article>
-  </div>
-</section>
-```
-
-Backend API:
-
-```agi
-fn api_posts(request):
-    let posts = db().query("select title, slug, excerpt from posts where status = ? order by published_at desc", ["published"])
-    return json_response({"posts": posts})
-```
-
----
-
-## Documentation
-
-| Document | Purpose |
+| Area | Capability |
 |---|---|
-| `docs/WEB_APP_STARTER_GUIDE.md` | Web app starter instructions |
-| `docs/CMS_BLOG_STARTER_GUIDE.md` | CMS/blog app structure, routes, password reset, SMTP |
-| `docs/AGILANG_WEB_SHOWCASE.md` | How this branch showcases the language |
-| `docs/BRANCHING_AND_RELEASE_POLICY.md` | Branch separation policy |
+| Language | `.agi` source files, parser, runtime, CLI, syntax tooling |
+| Templates | `.ags` reactive templates |
+| Web framework | Laravel-style app structure, routes, controllers, config, auth pages |
+| Blockchain | SBQ/EVM-style app generator, beacon, validators, RPC, mempool, consensus profile |
+| AIFlow | Native ML, CNN training, dataset engine, tokenizer, transformer starter, ONNX reference runtime |
+| Deployment | Vendored runtime support for portable generated projects |
 
 ---
 
-## Branch relationship
-
-| Branch | Purpose |
-|---|---|
-| `main` | AGILANG runtime, language docs, CLI, blockchain runtime |
-| `blog` | CMS/blog/web starter kit and public application showcase |
-| `dev` | Active framework/runtime development |
-## What you can build
-
-| Area | Examples |
-|---|---|
-| Web apps | landing pages, dashboards, SaaS portals, admin panels |
-| CMS/blog apps | posts, categories, pages, media, admin publishing workflow |
-| APIs | REST-style JSON APIs, internal services, integrations |
-| Realtime apps | live dashboards, polling/live AGS bindings, notifications |
-| Business systems | payments, merchant portals, internal operations tools |
-| Blockchain apps | SBQ chain starter, validators, staking, JSON-RPC, MetaMask local/staging setup |
-| Smart-contract tooling track | EVM chain experiments, contract/dApp workflow, RPC integration |
-
----
-
-## Install locally
+## Install and basic commands
 
 ```bash
-git clone https://github.com/GLOBAL-FINTECH/agilang.git
-cd agilang
-python -m pip install -e .
-agi --version
+pip install -e .
 ```
 
-Expected:
+Check the CLI:
 
-```text
-AGILANG 2.1.0
+```bash
+agi --help
+```
+
+Run an AGILANG file:
+
+```bash
+agi run examples/hello.agi
+```
+
+Run tests:
+
+```bash
+python -m pytest -q
+```
+
+Compile check:
+
+```bash
+python -m compileall -q agilang tests
 ```
 
 ---
 
-## Your first AGILANG program
+# AGILANG project generation
 
-Create `hello.agi`:
+## Create an AI runtime app
+
+The AI runtime generator creates **AGILANG entrypoints**, not Python launchers.
+
+```bash
+agi new my-ai --template ai
+cd my-ai
+```
+
+Generated root files:
+
+```text
+run.agi
+train.agi
+infer.agi
+dataset.agi
+benchmark.agi
+transformer.agi
+```
+
+Run the generated AI app:
+
+```bash
+agi run run.agi
+```
+
+Run dataset workflow:
+
+```bash
+agi run dataset.agi
+```
+
+Run training workflow:
+
+```bash
+agi run train.agi
+```
+
+Run inference workflow:
+
+```bash
+agi run infer.agi
+```
+
+Run benchmark workflow:
+
+```bash
+agi run benchmark.agi
+```
+
+Run transformer workflow:
+
+```bash
+agi run transformer.agi
+```
+
+Force recreate:
+
+```bash
+agi new my-ai --template ai --force
+```
+
+Generate without vendored runtime:
+
+```bash
+agi new my-ai --template ai --no-vendor
+```
+
+Important rule:
+
+```text
+Generated AI application entrypoints are .agi files.
+The generator does not create run.py, train.py, infer.py, or benchmark.py as app-facing commands.
+```
+
+The current runtime backend may still be Python-hosted internally, but the generated project surface is AGILANG-native.
+
+---
+
+## AI runtime project structure
+
+```text
+my-ai/
+├─ agilang.toml
+├─ .env.example
+├─ run.agi
+├─ train.agi
+├─ infer.agi
+├─ dataset.agi
+├─ benchmark.agi
+├─ transformer.agi
+├─ src/
+│  ├─ ai_runtime.agi
+│  ├─ train.agi
+│  ├─ infer.agi
+│  ├─ dataset.agi
+│  ├─ benchmark.agi
+│  └─ transformer.agi
+├─ config/
+│  └─ ai.json
+├─ resources/views/
+│  └─ dashboard.ags
+├─ storage/
+│  ├─ datasets/
+│  └─ models/
+└─ vendor/agilang/        optional vendored runtime
+```
+
+---
+
+# AIFlow features
+
+## 1. Dataset engine: AGIRecord
+
+Files:
+
+```text
+agilang/agirecord.py
+agilang/agirecord_indexed.py
+```
+
+Capabilities:
+
+```text
+AGIRecord dataset format
+save/load
+shuffle
+batch
+split
+summary
+indexed random access
+```
+
+Python-level test command:
+
+```bash
+python -m pytest tests/test_ai_platform_70.py tests/test_ai_platform_100.py -q
+```
+
+AGI app command:
+
+```bash
+agi run dataset.agi
+```
+
+Conceptual AGI workflow:
 
 ```agi
 fn main() -> i32:
-    let name = "AGILANG"
-    print("Hello from " + name)
+    print("Create AGIRecord dataset")
+    print("Shuffle, batch, split, and index records")
     return 0
 ```
 
-Run it:
+---
+
+## 2. Image preprocessing
+
+File:
+
+```text
+agilang/image_ops.py
+```
+
+Capabilities:
+
+```text
+pixel_scale
+flip_left_right
+flip_top_bottom
+crop_center
+resize_nearest
+```
+
+Test:
 
 ```bash
-agi run hello.agi
+python -m pytest tests/test_ai_platform_100.py -q
 ```
 
 ---
 
-## Basic language syntax
+## 3. Native tensors and autodiff
 
-### Variables
-
-```agi
-let app_name = "My App"
-let count: i32 = 10
-const VERSION = "1.0.0"
-```
-
-### Functions
-
-```agi
-fn greet(name: string) -> string:
-    return "Hello, " + name
-```
-
-### Conditionals
-
-```agi
-if role == "admin":
-    print("Admin user")
-elif role == "editor":
-    print("Editor user")
-else:
-    print("Normal user")
-```
-
-### Structs
-
-```agi
-struct User:
-    id: i32
-    name: string
-    email: string
-```
-
-### Imports
-
-```agi
-import "routes/web.agi"
-import "services/mail.agi"
-```
-
-For the full beginner guide, read:
+Files:
 
 ```text
-docs/LANGUAGE_GUIDE.md
+agilang/ndtensor.py
+agilang/aiflow_native.py
 ```
 
----
+Capabilities:
 
-## Create a web app
+```text
+NDTensor
+variable
+matmul
+mse
+softmax
+reverse-mode autodiff
+SGD step
+native dense training
+```
+
+Test:
 
 ```bash
-agi new my-web-app
-cd my-web-app
-agi serve src/main.agi --host 127.0.0.1 --port 8000
-```
-
-Open:
-
-```text
-http://127.0.0.1:8000
-```
-
-Recommended web app structure:
-
-```text
-my-web-app/
-├─ agilang.toml
-├─ .env.example
-├─ src/
-│  ├─ main.agi
-│  ├─ routes/
-│  ├─ controllers/
-│  ├─ services/
-│  └─ middleware/
-├─ resources/
-│  ├─ views/*.ags
-│  └─ assets/
-├─ database/migrations/
-├─ storage/
-└─ tests/
+python -m pytest tests/test_ndtensor.py tests/test_aiflow_native.py -q
 ```
 
 ---
 
-## AGS reactive templates
+## 4. CNN vision kernels
 
-AGILANG views use `.ags` templates:
+Files:
 
-```ags
-@page title="Dashboard" seo_description="AGILANG dashboard example."
-@layout "layout.ags"
-@fetch stats from "/api/stats"
-@live stats from "/api/stats" every 5000
-
-<section class="dashboard">
-  <h1>{{ title }}</h1>
-  <p>Total users: {{ stats.users }}</p>
-  <p>Status: {{ stats.status }}</p>
-</section>
+```text
+agilang/vision_kernels.py
+agilang/vision_kernels_v2.py
+agilang/cnn_layers.py
 ```
 
-Backend route example:
+Capabilities:
 
-```agi
-fn api_stats(request):
-    return json_response({"users": 100, "status": "online"})
+```text
+single-channel Conv2D
+RGB Conv2D
+multi-filter Conv2D
+ReLU
+MaxPool
+AvgPool
+Flatten
+softmax
+image classifier pipeline
+CNN .agi-model save/load
 ```
 
----
-
-## Command line basics
-
-Common commands:
+Test:
 
 ```bash
-agi --version
-agi run src/main.agi
-agi serve src/main.agi --host 127.0.0.1 --port 8000
-agi check src tests
-agi test
-agi new my-web-app
-agi new my-chain --template blockchain
-```
-
-Full CLI documentation:
-
-```text
-docs/CLI_REFERENCE.md
+python -m pytest tests/test_vision_kernels.py tests/test_vision_kernels_v2.py tests/test_cnn_layers.py -q
 ```
 
 ---
 
-## Generate a blockchain app
+## 5. CNN training
 
-AGILANG can generate a complete configurable blockchain starter:
+Files:
+
+```text
+agilang/conv2d_training.py
+agilang/cnn_optimizers.py
+agilang/conv2d_multichannel_training.py
+agilang/cnn_training_loop_v1.py
+agilang/cnn_training_loop_v2.py
+agilang/cnn_batch_trainer.py
+```
+
+Capabilities:
+
+```text
+Conv2D forward
+Conv2D backward
+MSE loss
+SGD kernel update
+Adam kernel update
+MaxPool backward
+multi-channel Conv2D gradients
+multi-filter Conv2D gradients
+ReLU backward
+Dense classifier backward
+softmax cross-entropy
+full native CNN classifier training loop
+batch trainer
+checkpoint helper
+```
+
+Run CNN training tests:
 
 ```bash
-agi new my-chain --template blockchain
-cd my-chain
-agi run
-agi run src/chain.agi
-agi run src/beacon.agi
+python -m pytest tests/test_conv2d_training.py tests/test_cnn_optimizers.py tests/test_conv2d_multichannel_training.py tests/test_cnn_training_loop_v1.py tests/test_cnn_training_loop_v2.py -q
 ```
 
-The generated project includes:
+Run generated AGI training entrypoint:
 
-```text
-src/main.agi
-src/chain.agi
-src/beacon.agi
-src/staking.agi
-src/network.agi
-src/ethereum_clients.agi
-src/ethereum_consensus.agi
-config/genesis.json
-config/network.json
-config/rpc.json
-config/beacon.json
-config/ethereum-consensus-replica.json
-config/ethereum-clients.json
-config/wallets/wallets.example.json
-storage/beacon.sqlite
-docs/BLOCKCHAIN_RUNBOOK.md
-docs/SBQ_BEACON_CHAIN_V21.md
-docs/ETHEREUM_CONSENSUS_REPLICA_V20_2.md
+```bash
+agi run train.agi
 ```
 
-Full blockchain generator guide:
+Complete CNN training pipeline:
 
 ```text
-docs/BLOCKCHAIN_APP_GENERATOR.md
+RGB image
+-> multi-filter Conv2D
+-> ReLU
+-> MaxPool
+-> Flatten
+-> Dense classifier
+-> Softmax loss
+-> Dense backward
+-> MaxPool backward
+-> ReLU backward
+-> Conv2D backward
+-> Adam updates
 ```
 
 ---
 
-## Native SBQ Beacon commands
+## 6. Tokenizer and language model starter
+
+Files:
+
+```text
+agilang/tokenizer_engine.py
+agilang/bpe_tokenizer.py
+agilang/llm_trainer.py
+```
+
+Capabilities:
+
+```text
+word tokenizer
+BPE tokenizer starter
+tiny language model training
+next-token prediction
+.agi-model save/load
+```
+
+Test:
 
 ```bash
-agi beacon capabilities
-agi beacon init
+python -m pytest tests/test_ai_platform_100.py tests/test_ai_final_execution_layer.py -q
+```
+
+Run generated transformer workflow:
+
+```bash
+agi run transformer.agi
+```
+
+Tiny LLM pipeline:
+
+```text
+text
+-> BPE tokenizer
+-> token ids
+-> token pairs
+-> tiny LM training
+-> .agi-model
+```
+
+---
+
+## 7. Transformer runtime
+
+Files:
+
+```text
+agilang/transformer_blocks.py
+agilang/transformer_runtime.py
+```
+
+Capabilities:
+
+```text
+Embedding descriptor
+Attention descriptor
+Transformer stack descriptor
+layer_norm
+attention_scores
+attention_pool
+feed_forward
+transformer_block
+```
+
+Test:
+
+```bash
+python -m pytest tests/test_ai_platform_100.py -q
+```
+
+---
+
+## 8. ONNX Tier 1 reference runtime
+
+File:
+
+```text
+agilang/onnx_tier1_runtime.py
+```
+
+Implemented reference ops:
+
+```text
+Relu
+Sigmoid
+Softmax
+MatMul
+Add
+Mul
+Flatten
+Reshape
+Transpose
+Gemm
+```
+
+Test:
+
+```bash
+python -m pytest tests/test_ai_final_execution_layer.py -q
+```
+
+The ONNX layer is a reference executor for descriptor dictionaries. Full ONNX file parsing and complete operator coverage are future production work.
+
+---
+
+## 9. GPU runtime planner and kernel registry
+
+Files:
+
+```text
+agilang/gpu_runtime_plan.py
+agilang/gpu_kernel_registry.py
+```
+
+Capabilities:
+
+```text
+CUDA backend detection plan
+ROCm backend detection plan
+DirectML backend detection plan
+Metal backend detection plan
+CPU fallback
+kernel registry for matmul, conv2d, relu, softmax, attention
+```
+
+Test:
+
+```bash
+python -m pytest tests/test_ai_platform_100.py tests/test_ai_final_execution_layer.py -q
+```
+
+Important boundary:
+
+```text
+GPU dispatch points exist.
+Production CUDA/ROCm/DirectML/Metal kernels still need hardware-specific implementation.
+```
+
+---
+
+## 10. Distributed training planner and runtime reference
+
+Files:
+
+```text
+agilang/distributed_training.py
+agilang/distributed_runtime.py
+```
+
+Capabilities:
+
+```text
+training node descriptor
+distributed strategy planner
+shard planner
+local allreduce average reference
+```
+
+Test:
+
+```bash
+python -m pytest tests/test_ai_platform_100.py tests/test_ai_final_execution_layer.py -q
+```
+
+Boundary:
+
+```text
+Local distributed math is implemented.
+Real network transport and multi-node execution are future production work.
+```
+
+---
+
+## 11. Benchmarks
+
+File:
+
+```text
+agilang/ai_benchmarks.py
+```
+
+Capabilities:
+
+```text
+time_call
+benchmark_suite
+compare_reference
+```
+
+Run benchmark workflow in generated AI app:
+
+```bash
+agi run benchmark.agi
+```
+
+Run tests:
+
+```bash
+python -m pytest tests/test_ai_platform_70.py -q
+```
+
+---
+
+# End-to-end AI runtime validation
+
+Run all AI-related tests:
+
+```bash
+python -m pytest \
+  tests/test_ai_toolkit.py \
+  tests/test_aiflow.py \
+  tests/test_aiflow_full.py \
+  tests/test_aiflow_native.py \
+  tests/test_ndtensor.py \
+  tests/test_vision_kernels.py \
+  tests/test_vision_kernels_v2.py \
+  tests/test_cnn_layers.py \
+  tests/test_conv2d_training.py \
+  tests/test_cnn_optimizers.py \
+  tests/test_conv2d_multichannel_training.py \
+  tests/test_cnn_training_loop_v1.py \
+  tests/test_cnn_training_loop_v2.py \
+  tests/test_ai_platform_70.py \
+  tests/test_ai_platform_100.py \
+  tests/test_ai_final_execution_layer.py \
+  -q
+```
+
+Run complete repository tests:
+
+```bash
+python -m pytest -q
+```
+
+Compile all modules:
+
+```bash
+python -m compileall -q agilang tests
+```
+
+---
+
+# Blockchain generation
+
+Create a blockchain project:
+
+```bash
+agi new cbac-chain --template blockchain --chain-id 1900 --symbol SBQ --force
+cd cbac-chain
+```
+
+Generated blockchain entrypoints are AGI files:
+
+```text
+run.agi
+chain.agi
+rpc.agi
+```
+
+Run:
+
+```bash
+agi run run.agi
+agi run chain.agi
+agi run rpc.agi
+```
+
+Check chain status:
+
+```bash
+agi chain status --root .
+```
+
+Start RPC:
+
+```bash
+agi chain rpc --root . --host 127.0.0.1 --port 8545
+```
+
+Beacon commands:
+
+```bash
+agi beacon init --path . --chain-id 1900
 agi beacon status
-agi beacon validators
 agi beacon produce-block
 agi beacon attest
 agi beacon finalize
 agi beacon fork-choice
-agi beacon simulate --validators 64 --epochs 10
+agi beacon simulate --validators 64 --epochs 2
 ```
 
-The SBQ Beacon layer is for AGILANG/SBQ custom chains. It is not an Ethereum mainnet validator replacement.
+Ethereum consensus profile commands:
+
+```bash
+agi chain ethereum-consensus-capabilities
+agi chain ethereum-consensus-write-config --chain-id 901900
+agi chain ethereum-consensus-check
+agi chain ethereum-consensus-sim --slots 8
+agi chain consensus-replacement-plan --network private-fork --consensus ethereum-pos-replica
+```
 
 ---
 
-## Ethereum runtime boundary
+# Web starter direction
 
-AGILANG supports three blockchain lanes:
-
-| Mode | Consensus |
-|---|---|
-| SBQ native chain | Native SBQ Beacon or AGILANG PoS/DPoS/dev |
-| Ethereum-derived private fork | Ethereum PoS replica by default |
-| Ethereum mainnet connectivity | Real external Ethereum clients |
-| Ethereum mainnet validation | Official Ethereum consensus/validator clients only |
-
-AGILANG does not override live Ethereum mainnet consensus. Ethereum mainnet validation must remain external-client based unless full Ethereum consensus-spec compatibility, security review, and production hardening are completed.
-
----
-
-## Documentation map
-
-| Document | Purpose |
-|---|---|
-| `docs/GETTING_STARTED.md` | Beginner installation and first app guide |
-| `docs/LANGUAGE_GUIDE.md` | AGILANG syntax and programming basics |
-| `docs/CLI_REFERENCE.md` | Command-line guide |
-| `docs/APPLICATIONS_AND_STARTERS.md` | Web, CMS, business, realtime, and blockchain starter overview |
-| `docs/BLOCKCHAIN_APP_GENERATOR.md` | Step-by-step blockchain app generator guide |
-| `docs/SBQ_BEACON_CHAIN_V21.md` | Native SBQ Beacon layer |
-| `docs/ETHEREUM_CONSENSUS_REPLICA_V20_2.md` | Ethereum PoS replica private-fork profile |
-| `docs/ETHEREUM_CLIENT_STACK_V20.md` | External Ethereum client orchestration |
-| `docs-site/index.html` | Static HTML documentation landing page |
-
----
-
-## Static HTML documentation site
-
-A GitHub Pages-ready documentation landing page is included in:
+AGILANG web apps should follow a Laravel-style layout:
 
 ```text
-docs-site/index.html
+app/
+  controllers/
+config/
+  app.agi
+  auth.agi
+  database.agi
+routes/
+  web.agi
+  api.agi
+resources/views/
+  layout.ags
+  home.ags
+  login.ags
+  register.ags
+  forgot-password.ags
+  reset-password.ags
+storage/
+public_html/
 ```
 
-Recommended GitHub Pages setup:
+AGS is the default template engine. React, Vue, and raw HTML should remain optional front-end targets.
+
+---
+
+# Production boundary
+
+AGILANG AIFlow now has a complete reference execution foundation:
 
 ```text
-Repository Settings -> Pages -> Deploy from branch -> main -> /docs-site
+dataset -> preprocessing -> CNN training -> model save/load -> tokenizer -> transformer starter -> ONNX reference -> GPU planner -> distributed planner
 ```
 
-Use the HTML site as the public polished documentation homepage, while keeping Markdown docs for GitHub readers and contributors.
+Still required for production parity with TensorFlow/PyTorch:
 
----
+```text
+hardware-optimized CUDA/ROCm/DirectML/Metal kernels
+full ONNX file parser and complete operator coverage
+real multi-node network transport
+large-scale transformer backpropagation
+production LLM checkpointing and serving
+```
 
-## Branches
-
-| Branch | Purpose |
-|---|---|
-| `main` | AGILANG runtime, language docs, CLI, blockchain runtime, tests |
-| `dev` | Active runtime/framework development |
-| `blog` | Public CMS/blog/web app starter branch |
-| `evm-chain-implementations` | EVM chain implementation track |
-
----
-
-## Starter quality rule
-
-No page should be a fake static template. Every visible section must be backed by a route, config, database query, seed/demo data file, or a proper empty state.
-## Production boundary
-
-AGILANG is suitable for local development, staging, private-fork simulation, application scaffolding, and AGILANG/SBQ chain implementation work. Before any public real-value chain launch, add independent security review, hardened networking, peer scoring, validator key isolation, validator penalty economics, DoS hardening, archive/indexer separation, long-running supervision, and production monitoring.
+The current system is suitable as a native AGILANG AI framework foundation and CPU reference runtime. Production acceleration comes next.
