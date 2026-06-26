@@ -16,10 +16,9 @@ import math
 from pathlib import Path
 from typing import Any, Iterable, Sequence
 
-from .ndtensor import NDTensor, matmul as _nd_matmul, mse as _nd_mse, ndtensor, sgd_step, softmax as _nd_softmax, variable
+from .ndtensor import NDTensor, matmul as _nd_matmul, mse as _nd_mse, ndtensor, sgd_step, softmax as _nd_softmax
 
 TORCH_COMPAT_FORMAT = "agilang-torch-compat-v1"
-
 
 float32 = "float32"
 float64 = "float64"
@@ -31,12 +30,35 @@ class TorchCompatError(RuntimeError):
     pass
 
 
+def _unflatten_like(flat: Sequence[float], shape: tuple[int, ...]) -> Any:
+    values = [float(v) for v in flat]
+    if shape == ():
+        return values[0] if values else 0.0
+
+    def build(offset: int, dims: tuple[int, ...]) -> tuple[Any, int]:
+        if not dims:
+            return (values[offset] if offset < len(values) else 0.0), offset + 1
+        out = []
+        current = offset
+        for _ in range(int(dims[0])):
+            item, current = build(current, dims[1:])
+            out.append(item)
+        return out, current
+
+    result, _ = build(0, shape)
+    return result
+
+
+def _unwrap(value: Any) -> Any:
+    return value._tensor if isinstance(value, Tensor) else value
+
+
 class Tensor:
     """PyTorch-style wrapper around NDTensor.
 
-    This wrapper supports the common small-model API shape: `.shape`, `.grad`,
-    `.tolist()`, `.item()`, `.backward()`, arithmetic, reductions, ReLU, sigmoid,
-    matmul and save/load-compatible state dictionaries.
+    Supports common small-model workflows: `.shape`, `.grad`, `.tolist()`,
+    `.item()`, `.backward()`, arithmetic, reductions, activations, matmul and
+    save/load-compatible state dictionaries.
     """
 
     def __init__(self, data: Any, *, requires_grad: bool = False, dtype: str = float32, device: str = "cpu", name: str | None = None) -> None:
@@ -120,13 +142,22 @@ class Tensor:
         return Tensor(self._tensor - _unwrap(other), dtype=self.dtype)
 
     def __rsub__(self, other: Any) -> "Tensor":
-        return Tensor(ndtensor(_unwrap(other)) - self._tensor, dtype=self.dtype)
+        # Ensure scalar - tensor broadcasts through the tensor-shaped left side.
+        return Tensor((self._tensor * -1.0) + _unwrap(other), dtype=self.dtype)
 
     def __mul__(self, other: Any) -> "Tensor":
         return Tensor(self._tensor * _unwrap(other), dtype=self.dtype)
 
     def __rmul__(self, other: Any) -> "Tensor":
         return self.__mul__(other)
+
+    def __truediv__(self, other: Any) -> "Tensor":
+        other_unwrapped = _unwrap(other)
+        if isinstance(other_unwrapped, NDTensor):
+            if other_unwrapped.shape != ():
+                raise TorchCompatError("elementwise tensor division is not implemented yet")
+            other_unwrapped = other_unwrapped.data[0]
+        return Tensor(self._tensor * (1.0 / float(other_unwrapped)), dtype=self.dtype)
 
     def __pow__(self, power: float) -> "Tensor":
         return Tensor(self._tensor ** power, dtype=self.dtype)
@@ -136,21 +167,6 @@ class Tensor:
 
     def __repr__(self) -> str:
         return f"agilang.tensor({self.tolist()}, shape={self.shape}, requires_grad={self.requires_grad})"
-
-
-def _unwrap(value: Any) -> Any:
-    return value._tensor if isinstance(value, Tensor) else value
-
-
-def _unflatten_like(flat: Sequence[float], shape: tuple[int, ...]) -> Any:
-    if shape == ():
-        return float(flat[0]) if flat else 0.0
-    if len(shape) == 1:
-        return [float(v) for v in flat]
-    if len(shape) == 2:
-        rows, cols = shape
-        return [[float(flat[i * cols + j]) for j in range(cols)] for i in range(rows)]
-    return [float(v) for v in flat]
 
 
 def tensor(data: Any, *, dtype: str = float32, device: str = "cpu", requires_grad: bool = False) -> Tensor:
@@ -178,6 +194,8 @@ def ones(shape: Sequence[int], *, dtype: str = float32, device: str = "cpu", req
 
 
 def arange(start: int, end: int | None = None, step: int = 1, *, dtype: str = float32, device: str = "cpu") -> Tensor:
+    if step == 0:
+        raise ValueError("step must not be zero")
     if end is None:
         start, end = 0, start
     return tensor([float(v) for v in range(int(start), int(end), int(step))], dtype=dtype, device=device)
@@ -202,7 +220,6 @@ def sigmoid(x: Any) -> Tensor:
 
 
 def softmax(x: Any, dim: int = -1) -> Tensor:
-    # Current native softmax is vector-level; matrix dim=-1 is row-wise.
     t = x if isinstance(x, Tensor) else tensor(x)
     values = t.tolist()
     if len(t.shape) == 2 and dim in {-1, 1}:
@@ -236,6 +253,8 @@ class Module:
                 for item in value:
                     if isinstance(item, Module):
                         params.extend(item.parameters())
+                    elif isinstance(item, Parameter):
+                        params.append(item)
         return params
 
     def zero_grad(self) -> None:
@@ -250,6 +269,11 @@ class Module:
             elif isinstance(value, Module):
                 for k, v in value.state_dict().items():
                     state[f"{name}.{k}"] = v
+            elif isinstance(value, list):
+                for idx, item in enumerate(value):
+                    if isinstance(item, Module):
+                        for k, v in item.state_dict().items():
+                            state[f"{name}.{idx}.{k}"] = v
         return state
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
@@ -261,7 +285,10 @@ class Module:
 
 class Parameter(Tensor):
     def __init__(self, data: Any, *, dtype: str = float32) -> None:
-        super().__init__(data, requires_grad=True, dtype=dtype)
+        if isinstance(data, Tensor):
+            super().__init__(data.tolist(), requires_grad=True, dtype=dtype)
+        else:
+            super().__init__(data, requires_grad=True, dtype=dtype)
 
 
 class Linear(Module):
@@ -305,6 +332,13 @@ class Sequential(Module):
         for layer in self.layers:
             params.extend(layer.parameters())
         return params
+
+    def state_dict(self) -> dict[str, Any]:
+        state: dict[str, Any] = {}
+        for idx, layer in enumerate(self.layers):
+            for key, value in layer.state_dict().items():
+                state[f"{idx}.{key}"] = value
+        return state
 
 
 class SGD:
@@ -368,6 +402,7 @@ def torch_compat_status() -> dict[str, Any]:
         "implemented": [
             "Tensor wrapper",
             "tensor/as_tensor/zeros/ones/arange",
+            "recursive list tensor shapes through NDTensor",
             "autograd for scalar loss graphs supported by NDTensor",
             "matmul/mm/relu/sigmoid/softmax/mse_loss",
             "nn.Module/Parameter/Linear/ReLU/Sigmoid/Sequential",
