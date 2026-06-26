@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 import time
+from pathlib import Path
 
 from .ai_runtime_generator import generate_ai_runtime_app
 from .beacon import (
@@ -237,6 +238,139 @@ def _handle_chain(argv: list[str]) -> bool:
     return False
 
 
+def _read_text_corpus(path: str | None, texts: list[str] | None = None) -> list[str]:
+    result = list(texts or [])
+    if path:
+        raw = Path(path).read_text(encoding="utf-8")
+        lines = [line.strip() for line in raw.splitlines() if line.strip()]
+        result.extend(lines or [raw])
+    if not result:
+        raise SystemExit("Provide --text and/or --input")
+    return result
+
+
+def _handle_ai(argv: list[str]) -> bool:
+    if not argv or argv[0] not in {"ai", "aiflow"}:
+        return False
+    command = argv[1] if len(argv) > 1 else "capabilities"
+
+    if command in {"capabilities", "status"}:
+        from .ai_platform import ai_capabilities
+        _print_json(ai_capabilities())
+        return True
+
+    if command in {"doctor", "deployment-gate"}:
+        from .ai_platform import ai_deployment_gate
+        parser = argparse.ArgumentParser(prog="agi ai doctor")
+        parser.add_argument("--require-onnxruntime", action="store_true")
+        parser.add_argument("--require-gpu", action="store_true")
+        args = parser.parse_args(argv[2:])
+        payload = ai_deployment_gate(require_onnxruntime=bool(args.require_onnxruntime), require_gpu=bool(args.require_gpu))
+        _print_json(payload)
+        if not payload["ok"]:
+            raise SystemExit(1)
+        return True
+
+    if command == "tokenizer-train":
+        from .bpe_tokenizer import BPETokenizer
+        parser = argparse.ArgumentParser(prog="agi ai tokenizer-train")
+        parser.add_argument("--input", help="Text corpus file")
+        parser.add_argument("--text", action="append", default=[])
+        parser.add_argument("--out", required=True)
+        parser.add_argument("--merges", type=int, default=200)
+        parser.add_argument("--lowercase", action="store_true")
+        args = parser.parse_args(argv[2:])
+        texts = _read_text_corpus(args.input, args.text)
+        tokenizer = BPETokenizer.train(texts, merges=args.merges, lowercase=bool(args.lowercase))
+        path = tokenizer.save(args.out)
+        _print_json({"ok": True, "path": path, "summary": tokenizer.summary()})
+        return True
+
+    if command == "tokenizer-encode":
+        from .bpe_tokenizer import BPETokenizer
+        parser = argparse.ArgumentParser(prog="agi ai tokenizer-encode")
+        parser.add_argument("--model", required=True)
+        parser.add_argument("--text", required=True)
+        parser.add_argument("--bos", action="store_true")
+        parser.add_argument("--eos", action="store_true")
+        args = parser.parse_args(argv[2:])
+        tokenizer = BPETokenizer.load(args.model)
+        ids = tokenizer.encode(args.text, add_bos=bool(args.bos), add_eos=bool(args.eos))
+        _print_json({"ok": True, "ids": ids, "decoded": tokenizer.decode(ids)})
+        return True
+
+    if command == "tokenizer-decode":
+        from .bpe_tokenizer import BPETokenizer
+        parser = argparse.ArgumentParser(prog="agi ai tokenizer-decode")
+        parser.add_argument("--model", required=True)
+        parser.add_argument("--ids", required=True, help="JSON list or comma-separated token ids")
+        args = parser.parse_args(argv[2:])
+        tokenizer = BPETokenizer.load(args.model)
+        ids = json.loads(args.ids) if args.ids.strip().startswith("[") else [int(v.strip()) for v in args.ids.split(",") if v.strip()]
+        _print_json({"ok": True, "text": tokenizer.decode(ids)})
+        return True
+
+    if command == "lm-train":
+        from .llm_trainer import train_ngram_lm
+        parser = argparse.ArgumentParser(prog="agi ai lm-train")
+        parser.add_argument("--input", help="Text corpus file")
+        parser.add_argument("--text", action="append", default=[])
+        parser.add_argument("--out", required=True)
+        parser.add_argument("--merges", type=int, default=200)
+        parser.add_argument("--order", type=int, default=3)
+        parser.add_argument("--lowercase", action="store_true")
+        args = parser.parse_args(argv[2:])
+        texts = _read_text_corpus(args.input, args.text)
+        bundle = train_ngram_lm(texts, merges=args.merges, order=args.order, lowercase=bool(args.lowercase))
+        path = bundle.save(args.out)
+        _print_json({"ok": True, "path": path, "summary": bundle.summary(), "perplexity": bundle.perplexity(texts)})
+        return True
+
+    if command == "lm-generate":
+        from .llm_trainer import LanguageModelBundle
+        parser = argparse.ArgumentParser(prog="agi ai lm-generate")
+        parser.add_argument("--model", required=True)
+        parser.add_argument("--prompt", required=True)
+        parser.add_argument("--steps", type=int, default=32)
+        parser.add_argument("--temperature", type=float, default=1.0)
+        args = parser.parse_args(argv[2:])
+        bundle = LanguageModelBundle.load(args.model)
+        _print_json({"ok": True, "text": bundle.generate(args.prompt, steps=args.steps, temperature=args.temperature), "summary": bundle.summary()})
+        return True
+
+    if command == "onnx-status":
+        from .onnx_tier1_runtime import onnx_runtime_status
+        _print_json(onnx_runtime_status())
+        return True
+
+    if command == "gpu-status":
+        from .gpu_kernel_registry import default_registry
+        _print_json(default_registry().production_report())
+        return True
+
+    if command == "distributed-status":
+        from .distributed_runtime import distributed_capabilities
+        _print_json(distributed_capabilities())
+        return True
+
+    if command == "preprocess-image":
+        from .image_ops import image_preprocess, save_image
+        parser = argparse.ArgumentParser(prog="agi ai preprocess-image")
+        parser.add_argument("--input", required=True)
+        parser.add_argument("--out", required=True)
+        parser.add_argument("--rows", type=int, required=True)
+        parser.add_argument("--cols", type=int, required=True)
+        parser.add_argument("--mode", default="L")
+        parser.add_argument("--no-normalize", action="store_true")
+        args = parser.parse_args(argv[2:])
+        image = image_preprocess(args.input, rows=args.rows, cols=args.cols, mode=args.mode, normalize=not bool(args.no_normalize))
+        path = save_image(args.out, image)
+        _print_json({"ok": True, "path": path, "shape": [args.rows, args.cols], "mode": args.mode})
+        return True
+
+    return False
+
+
 def _load_beacon_store(path: str = "storage/beacon.sqlite") -> BeaconStore:
     store = BeaconStore(path)
     store.init()
@@ -309,6 +443,8 @@ def _handle_beacon(argv: list[str]) -> bool:
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     if _handle_new(args):
+        return 0
+    if _handle_ai(args):
         return 0
     if _handle_chain(args):
         return 0
