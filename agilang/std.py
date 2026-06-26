@@ -1075,3 +1075,153 @@ def blockchain_demo() -> Dict[str, Any]:
     """Run a complete AGILANG blockchain demo and return status data."""
     from agilang.blockchain import blockchain_demo as _blockchain_demo
     return _blockchain_demo()
+
+
+# AGILANG AI / ML / tensor helpers
+def ai_runtime_info() -> Dict[str, Any]:
+    from agilang.ml import ai_runtime_info as _f
+    return _f()
+
+def ml_read_csv(path: str, numeric: bool = True) -> Any:
+    from agilang.ml import ml_read_csv as _f
+    return _f(path, numeric=numeric)
+
+def ml_write_csv(path: str, rows: Any) -> Dict[str, Any]:
+    from agilang.ml import ml_write_csv as _f
+    return _f(path, rows)
+
+def ml_missing_values(rows: Any) -> Dict[str, int]:
+    from agilang.ml import ml_missing_values as _f
+    return _f(rows)
+
+def ml_fill_missing(rows: Any, strategy: str = "mean", fill_value: Any = 0) -> Any:
+    from agilang.ml import ml_fill_missing as _f
+    return _f(rows, strategy=strategy, fill_value=fill_value)
+
+def ml_standard_scale(rows: Any, columns: Any) -> Any:
+    from agilang.ml import ml_standard_scale as _f
+    return _f(rows, columns)
+
+def ml_logistic_regression(rows: Any, target: str, features: Any, epochs: int = 1200, learning_rate: float = 0.1) -> Dict[str, Any]:
+    from agilang.ml import ml_logistic_regression as _f
+    return _f(rows, target, features, epochs=epochs, learning_rate=learning_rate)
+
+def ml_predict_logistic(model: Dict[str, Any], row: Dict[str, Any], threshold: float = 0.5) -> Dict[str, Any]:
+    from agilang.ml import ml_predict_logistic as _f
+    return _f(model, row, threshold=threshold)
+
+def ml_kmeans(rows: Any, features: Any, k: int = 2, iterations: int = 30) -> Dict[str, Any]:
+    from agilang.ml import ml_kmeans as _f
+    return _f(rows, features, k=k, iterations=iterations)
+
+def ml_decision_stump(rows: Any, target: str, features: Any) -> Dict[str, Any]:
+    from agilang.ml import ml_decision_stump as _f
+    return _f(rows, target, features)
+
+def ml_predict_tree(model: Dict[str, Any], row: Dict[str, Any]) -> Any:
+    from agilang.ml import ml_predict_tree as _f
+    return _f(model, row)
+
+def ml_accuracy(y_true: Any, y_pred: Any) -> float:
+    from agilang.ml import ml_accuracy as _f
+    return _f(y_true, y_pred)
+
+def ml_confusion_matrix(y_true: Any, y_pred: Any) -> Dict[str, Any]:
+    from agilang.ml import ml_confusion_matrix as _f
+    return _f(y_true, y_pred)
+
+def ml_neural_network_train(rows: Any, target: str, features: Any, hidden: int = 4, epochs: int = 1000, learning_rate: float = 0.1, seed: int = 42) -> Dict[str, Any]:
+    from agilang.ml import ml_neural_network_train as _f
+    return _f(rows, target, features, hidden=hidden, epochs=epochs, learning_rate=learning_rate, seed=seed)
+
+def ml_neural_network_predict(model: Dict[str, Any], row: Dict[str, Any], threshold: float = 0.5) -> Dict[str, Any]:
+    from agilang.ml import ml_neural_network_predict as _f
+    return _f(model, row, threshold=threshold)
+
+def ml_chart_spec(rows: Any, chart: str, x: str, y: str | None = None, title: str = "AGILANG Chart") -> Dict[str, Any]:
+    from agilang.ml import ml_chart_spec as _f
+    return _f(rows, chart, x, y, title)
+
+def ml_save_model(model: Dict[str, Any], path: str) -> Dict[str, Any]:
+    from agilang.ml import ml_save_model as _f
+    return _f(model, path)
+
+def ml_load_model(path: str) -> Dict[str, Any]:
+    from agilang.ml import ml_load_model as _f
+    return _f(path)
+
+def tensor_shape(value: Any) -> Any:
+    from agilang.ml import tensor_shape as _f
+    return _f(value)
+
+def tensor_zeros(shape: Any) -> Any:
+    from agilang.ml import tensor_zeros as _f
+    return _f(shape)
+
+def tensor_random(shape: Any, seed: int = 42, low: float = -0.1, high: float = 0.1) -> Any:
+    from agilang.ml import tensor_random as _f
+    return _f(shape, seed=seed, low=low, high=high)
+
+def tensor_transpose(matrix: Any) -> Any:
+    from agilang.ml import tensor_transpose as _f
+    return _f(matrix)
+
+def tensor_dot(a: Any, b: Any) -> float:
+    from agilang.ml import tensor_dot as _f
+    return _f(a, b)
+
+def tensor_matmul(a: Any, b: Any) -> Any:
+    from agilang.ml import tensor_matmul as _f
+    return _f(a, b)
+
+def tensor_add(a: Any, b: Any) -> Any:
+    from agilang.ml import tensor_add as _f
+    return _f(a, b)
+
+def tensor_sub(a: Any, b: Any) -> Any:
+    from agilang.ml import tensor_sub as _f
+    return _f(a, b)
+
+def tensor_mul(a: Any, b: Any) -> Any:
+    from agilang.ml import tensor_mul as _f
+    return _f(a, b)
+
+def tensor_mean(values: Any) -> float:
+    from agilang.ml import tensor_mean as _f
+    return _f(values)
+
+def tensor_variance(values: Any) -> float:
+    from agilang.ml import tensor_variance as _f
+    return _f(values)
+
+def tensor_relu(values: Any) -> Any:
+    from agilang.ml import tensor_relu as _f
+    return _f(values)
+
+def tensor_sigmoid(values: Any) -> Any:
+    from agilang.ml import tensor_sigmoid as _f
+    return _f(values)
+
+def tensor_softmax(values: Any) -> Any:
+    from agilang.ml import tensor_softmax as _f
+    return _f(values)
+
+def ml_dataset_summary(rows: Any) -> Dict[str, Any]:
+    from agilang.ml import ml_dataset_summary as _f
+    return _f(rows)
+
+def ml_train_test_split(rows: Any, test_ratio: float = 0.2, shuffle: bool = False, seed: int = 42) -> Dict[str, Any]:
+    from agilang.ml import ml_train_test_split as _f
+    return _f(rows, test_ratio=test_ratio, shuffle=shuffle, seed=seed)
+
+def ml_linear_regression(rows: Any, target: str, features: Any) -> Dict[str, Any]:
+    from agilang.ml import ml_linear_regression as _f
+    return _f(rows, target, features)
+
+def ml_predict_linear(model: Dict[str, Any], row: Dict[str, Any]) -> float:
+    from agilang.ml import ml_predict_linear as _f
+    return _f(model, row)
+
+def ml_minmax_scale(rows: Any, columns: Any) -> Any:
+    from agilang.ml import ml_minmax_scale as _f
+    return _f(rows, columns)

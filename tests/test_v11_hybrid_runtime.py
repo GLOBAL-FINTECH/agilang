@@ -1,8 +1,12 @@
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
+from agilang import __version__
 from agilang.hybrid_runtime import (
     HybridWebRuntime,
     compile_native_runtime,
@@ -31,11 +35,13 @@ def test_agilab_alias_from_std():
 
 
 def test_compile_and_load_native_runtime(tmp_path: Path):
+    if shutil.which("gcc") is None:
+        pytest.skip("gcc is required to build the native runtime")
     result = compile_native_runtime(tmp_path)
     assert result.ok, result.stderr
     assert result.library_path and result.library_path.exists()
     native = NativeNetRuntime(result.library_path, auto_build=False)
-    assert "1.9.3" in native.version()
+    assert __version__ in native.version()
     assert native.selftest() is True
     caps = native.capabilities()
     assert caps["http"] is True
@@ -44,6 +50,8 @@ def test_compile_and_load_native_runtime(tmp_path: Path):
 
 
 def test_native_runtime_status_builds_and_reports():
+    if shutil.which("gcc") is None:
+        pytest.skip("gcc is required to build the native runtime")
     status = native_runtime_status(build=True)
     assert status["build"]["ok"] is True, status["build"].get("stderr")
     assert status["library_exists"] is True
@@ -60,7 +68,7 @@ def test_cli_runtime_status_and_example():
     )
     assert status_proc.returncode == 0, status_proc.stderr
     payload = json.loads(status_proc.stdout)
-    assert payload["agilang_runtime_version"] == "1.9.3"
+    assert payload["agilang_runtime_version"] == __version__
 
     example_proc = subprocess.run(
         [sys.executable, "-m", "agilang", "run", "examples/native_hybrid_web_runtime.agi"],

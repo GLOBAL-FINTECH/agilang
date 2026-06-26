@@ -6,8 +6,8 @@ from agilang.hybrid_runtime import RUNTIME_VERSION
 
 
 def test_native_runtime_version_tracks_package_release():
-    assert __version__ == "1.9.3"
-    assert RUNTIME_VERSION == "1.9.3"
+    assert __version__ == "2.1.0"
+    assert RUNTIME_VERSION == __version__
 
 
 def test_mempool_rejects_duplicate_transaction_hash():

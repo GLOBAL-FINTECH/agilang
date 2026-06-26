@@ -211,7 +211,7 @@ def _normalize_address(value: str | int | bytes | bytearray) -> str:
 def evm_keccak(data: bytes | str) -> str:
     raw = _bytes(data)
     try:
-        from Crypto.Hash import keccak  # type: ignore
+        from Crypto.Hash import keccak  # type: ignore  # nosec B413
         h = keccak.new(digest_bits=256)
         h.update(raw)
         return "0x" + h.hexdigest()
@@ -225,7 +225,7 @@ def _evm_keccak_bytes(data: bytes) -> bytes:
 
 def evm_has_exact_keccak() -> bool:
     try:
-        from Crypto.Hash import keccak  # type: ignore  # noqa: F401
+        from Crypto.Hash import keccak  # type: ignore  # noqa: F401  # nosec B413
         return True
     except Exception:
         return False

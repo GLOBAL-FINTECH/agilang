@@ -435,11 +435,11 @@ int agi_ws_broadcast(const char *message) {
 
 
 const char *agi_net_runtime_version(void) {
-    return "AGILANG native net runtime 1.9.3";
+    return "AGILANG native net runtime 2.1.0";
 }
 
 const char *agi_net_runtime_capabilities(void) {
-    return "{\"runtime\":\"agilang-native-c\",\"version\":\"1.9.3\",\"http\":true,\"websocket\":true,\"sha1\":true,\"base64\":true,\"broadcast\":true,\"ping_pong\":true,\"origin_guard\":true,\"token_guard\":true,\"max_frame_limit\":true,\"mobile_bridge\":true}";
+    return "{\"runtime\":\"agilang-native-c\",\"version\":\"2.1.0\",\"http\":true,\"websocket\":true,\"sha1\":true,\"base64\":true,\"broadcast\":true,\"ping_pong\":true,\"origin_guard\":true,\"token_guard\":true,\"max_frame_limit\":true,\"mobile_bridge\":true}";
 }
 
 int agi_net_runtime_selftest(void) {

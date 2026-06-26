@@ -21,8 +21,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
+from . import __version__
 
-RUNTIME_VERSION = "1.9.3"
+RUNTIME_VERSION = __version__
 
 
 @dataclass

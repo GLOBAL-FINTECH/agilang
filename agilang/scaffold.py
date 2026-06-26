@@ -463,6 +463,22 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
             </main>
             ''', files)
 
+        _write(root / "templates/home.html", f'''
+            <main class="shell hero">
+              <p class="eyebrow">AGILANG starter</p>
+              <h1>{title}</h1>
+              <p>Compatibility template alias for resources/views/home.ags.</p>
+            </main>
+            ''', files)
+
+        _write(root / "templates/dashboard.html", f'''
+            <main class="shell">
+              <p class="eyebrow">Dashboard</p>
+              <h1>{title} dashboard</h1>
+              <p>Compatibility template alias for resources/views/dashboard.ags.</p>
+            </main>
+            ''', files)
+
         _write(root / "resources/assets/css/app.css", '''
             :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, Arial, sans-serif; }
             * { box-sizing: border-box; }
@@ -479,6 +495,10 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
             .stats article, .card { min-width: 190px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; padding: 20px; }
             .stats span, .card span { display: block; color: #b8cadc; margin-bottom: 8px; }
             .stats strong, .card strong { font-size: 1.8rem; }
+            ''', files)
+
+        _write(root / "public/css/app.css", '''
+            @import url("/assets/css/app.css");
             ''', files)
 
         _write(root / "resources/assets/js/ags-runtime.js", '''
@@ -509,6 +529,10 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
               if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", hydrate);
               else hydrate();
             })();
+            ''', files)
+
+        _write(root / "public/js/app.js", '''
+            import "/assets/js/ags-runtime.js";
             ''', files)
 
         _write(root / "storage/.gitkeep", "\n", files)

@@ -1,6 +1,9 @@
 import json
+import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
 
 from agilang.security import api_key_hash, hmac_sign, hmac_verify, rate_limit, security_headers, verify_api_key
 from agilang.web import Request, json_response, web_app
@@ -73,6 +76,8 @@ def test_react_scaffolds_and_sdk(tmp_path: Path):
 
 
 def test_native_c_websocket_runtime_compile_check():
+    if shutil.which("gcc") is None:
+        pytest.skip("gcc is required for native C compile check")
     root = Path(__file__).resolve().parents[1]
     src = root / "native" / "agilang_net_runtime.c"
     out = root / "build" / "agilang_net_runtime_test.o"

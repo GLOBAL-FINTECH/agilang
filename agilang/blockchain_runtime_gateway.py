@@ -241,6 +241,20 @@ def generate_blockchain_app(
     _write(root / "config/validators.json", json.dumps({"chain_id": chain_id, "consensus": "pos", "validators": DEFAULT_VALIDATORS, "validator_signing_keys": key_ids, "slot_seconds": 1, "finality_depth": 8, "require_block_signatures": True}, indent=2), files, force=force)
     _write(root / "config/rpc.json", json.dumps({"host": "127.0.0.1", "port": 8545, "node_id": "rpc-node", "db_path": "storage/chain.sqlite", "auto_mine": True, "dev_send": True, "rate_limit_per_minute": 600, "max_body_bytes": 1048576, "cors_origin": "*", "chain": {"chain_id": chain_id, "name": title, "symbol": symbol, "decimals": decimals, "consensus": "pos", "mainnet_profile": True, "require_block_signatures": True, "mempool_min_gas_price": 1, "validators": DEFAULT_VALIDATORS, "validator_signing_keys": key_ids, "genesis_state": {"balances": DEFAULT_BALANCES}}}, indent=2), files, force=force)
     _write(root / "config/network.json", json.dumps({"network_name": slug, "chain_id": chain_id, "symbol": symbol, "mode": mode, "db_path": "storage/chain.sqlite", "services": {"public_rpc": {"host": "127.0.0.1", "port": 8545, "public": True}, "p2p": {"host": "0.0.0.0", "port": 30333, "public": True}, "validator_api": {"host": "127.0.0.1", "port": 8651, "public": False}, "metrics": {"host": "127.0.0.1", "port": 9100, "public": False}}}, indent=2), files, force=force)
+    _write(root / "config/ethereum-clients.json", json.dumps({
+        "network": "mainnet",
+        "mode": "full",
+        "data_dir": "ethereum-data",
+        "jwt_secret_path": "ethereum-data/jwt.hex",
+        "execution_client": "geth",
+        "consensus_client": "lighthouse",
+        "validator_client": "lighthouse",
+        "validator_enabled": False,
+        "archive": False,
+        "checkpoint_sync_url": "",
+        "fee_recipient": "",
+        "graffiti": "AGILANG-SBQ",
+    }, indent=2), files, force=force)
     _write(root / "config/profiles/local.json", json.dumps({"profile": "local", "purpose": "developer testing and CI", "rpc": {"host": "127.0.0.1", "tls_required_at_proxy": False}, "validator": {"mode": "internal", "dev_signing_keys_allowed": True}, "storage": {"backup_required": False}}, indent=2), files, force=force)
     _write(root / "config/profiles/production.json", json.dumps({"profile": "production", "purpose": "private-chain or staging baseline", "rpc": {"host": "127.0.0.1", "tls_required_at_proxy": True, "rate_limit_per_minute": 1200}, "validator": {"mode": "external", "dev_signing_keys_allowed": False, "key_provider_required": True}, "storage": {"backup_required": True, "sqlite_integrity_check_required": True}}, indent=2), files, force=force)
     _write(root / "config/validators.internal.json", json.dumps({"mode": "internal", "warning": "Use for local/devnet only.", "validators": DEFAULT_VALIDATORS}, indent=2), files, force=force)
@@ -271,6 +285,29 @@ def generate_blockchain_app(
 
         Add the local or production RPC endpoint from `config/metamask.json`. Contract deployments should be recorded in `config/contracts.example.json` and accepted only after receipt status is successful and enough confirmations are reached.
         """, files, force=force)
+    _write(root / "docs/METAMASK_SETUP.md", f'''
+        # MetaMask Setup
+
+        Add a custom network:
+
+        - Network name: `{title}`
+        - RPC URL: `http://127.0.0.1:8545`
+        - Chain ID: `{chain_id}`
+        - Currency symbol: `{symbol}`
+        - Decimals: `{decimals}`
+
+        Start the local RPC server with:
+
+        ```bash
+        agi chain rpc
+        ```
+
+        For standalone vendored deployments, use the project launcher:
+
+        ```bash
+        python run.py chain rpc
+        ```
+        ''', files, force=force)
     _write(root / "docs/STORAGE_DURABILITY.md", """
         # Storage Durability
 
