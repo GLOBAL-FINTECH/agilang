@@ -19,6 +19,7 @@ This index organizes the AGILANG documentation into a clear beginner-to-professi
 | Document | What it teaches |
 |---|---|
 | `docs/AGILANG_SYNTAX_AND_STDLIB_DEEP_REFERENCE.md` | Deep syntax, variables, constants, strings, lists, dictionaries, functions, structs, enums, imports, common standard-library patterns and professional style |
+| `docs/AGILANG_CLI_AND_DEVELOPER_WORKFLOW_REFERENCE.md` | CLI commands, daily developer workflow, AIFlow commands, blockchain commands, testing, Git workflow and deployment checks |
 | `docs/AGILANG_AGS_TEMPLATE_DEEP_REFERENCE.md` | AGS pages, layouts, escaped output, raw trusted HTML, forms, validation messages, error pages, dashboards and template safety |
 | `docs/AGILANG_WEB_DATABASE_AUTH_DEEP_REFERENCE.md` | Routes, controllers, APIs, database, safe SQL, models, migrations, authentication, authorization, sessions, CSRF, middleware and deployment checklist |
 | `docs/AGILANG_ERROR_DEBUGGING_DEEP_REFERENCE.md` | 404, 500, 422, 401, 403, 419, 429, syntax errors, import errors, template errors, database errors, logging, incident response and tests |
@@ -49,7 +50,27 @@ safe-divide.agi
 
 ---
 
-### Phase 2 — Web application development
+### Phase 2 — CLI and professional workflow
+
+Read:
+
+```text
+docs/AGILANG_CLI_AND_DEVELOPER_WORKFLOW_REFERENCE.md
+```
+
+Practice:
+
+```bash
+agi --help
+agi run hello.agi
+agi check hello.agi
+agi typecheck hello.agi
+python -m pytest
+```
+
+---
+
+### Phase 3 — Web application development
 
 Read:
 
@@ -71,7 +92,7 @@ custom 500 page
 
 ---
 
-### Phase 3 — Professional error handling
+### Phase 4 — Professional error handling
 
 Read:
 
@@ -91,7 +112,7 @@ admin-only page -> 403
 
 ---
 
-### Phase 4 — AIFlow developer
+### Phase 5 — AIFlow developer
 
 Read:
 
@@ -113,7 +134,7 @@ agi ai gpu-status
 
 ---
 
-### Phase 5 — Blockchain developer
+### Phase 6 — Blockchain developer
 
 Read:
 
@@ -174,5 +195,5 @@ Not implemented yet
 To become a professional AGILANG developer:
 
 ```text
-syntax -> modules -> web routes -> controllers -> templates -> auth -> database -> APIs -> errors -> tests -> AIFlow -> blockchain -> deployment
+syntax -> modules -> CLI -> web routes -> controllers -> templates -> auth -> database -> APIs -> errors -> tests -> AIFlow -> blockchain -> deployment
 ```
