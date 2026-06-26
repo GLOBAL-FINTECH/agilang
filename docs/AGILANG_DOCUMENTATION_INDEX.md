@@ -27,6 +27,8 @@ This index organizes the AGILANG documentation into a clear beginner-to-professi
 | `docs/AGILANG_DOCS_AI_TRAINING_TEST.md` | How to train and test a small local AGILANG docs AI model from README/WIKI/docs Markdown files |
 | `docs/AGILANG_DOCS_AI_QA_AND_CODE_DEMO.md` | How to inspect AGILANG docs AI questions, answers, code-writing tasks and generated Markdown/JSON reports |
 | `docs/AGILANG_DOCS_AI_CLEAN_ASK.md` | Clean docs AI ask command with intent detection, clean answers, isolated code blocks and ranked sources |
+| `docs/AGI_MEET_PRO_ZOOM_STYLE_APP.md` | Professional AGI Meet Zoom-style app architecture, UI, unified realtime chat, browser bridge and production gaps |
+| `docs/AGI_MEET_CAMERA_ERROR_AND_AUDIO_FIX.md` | Exact camera permissions-policy error, CSP fix, audio flow and browser-media troubleshooting for AGI Meet |
 | `docs/AIFLOW_PRODUCTION_UPGRADE.md` | AIFlow production upgrade boundaries, commands and deployment gates |
 
 ---
@@ -80,6 +82,8 @@ Read:
 ```text
 docs/AGILANG_AGS_TEMPLATE_DEEP_REFERENCE.md
 docs/AGILANG_WEB_DATABASE_AUTH_DEEP_REFERENCE.md
+docs/AGI_MEET_PRO_ZOOM_STYLE_APP.md
+docs/AGI_MEET_CAMERA_ERROR_AND_AUDIO_FIX.md
 ```
 
 Practice:
@@ -91,6 +95,10 @@ dashboard page
 JSON health API
 custom 404 page
 custom 500 page
+AGI Meet meeting room
+camera-test page
+same-origin realtime chat
+browser camera/audio bridge
 ```
 
 ---
@@ -101,6 +109,7 @@ Read:
 
 ```text
 docs/AGILANG_ERROR_DEBUGGING_DEEP_REFERENCE.md
+docs/AGI_MEET_CAMERA_ERROR_AND_AUDIO_FIX.md
 ```
 
 Practice:
@@ -111,6 +120,8 @@ simulate /simulate-500 -> 500
 invalid form -> 422
 unauthenticated API -> 401
 admin-only page -> 403
+browser CSP media error diagnosis
+Permissions-Policy camera/microphone diagnosis
 ```
 
 ---
@@ -172,6 +183,14 @@ python -m pytest
 agi ai doctor
 ```
 
+For AGI Meet browser/media apps:
+
+```bash
+agi serve src/main.agi --host 127.0.0.1 --port 8000
+# open http://localhost:8000/camera-test
+# open http://localhost:8000/meeting?room=agimeet-demo
+```
+
 For blockchain projects:
 
 ```bash
@@ -213,5 +232,5 @@ Not implemented yet
 To become a professional AGILANG developer:
 
 ```text
-syntax -> modules -> CLI -> web routes -> controllers -> templates -> auth -> database -> APIs -> errors -> tests -> AIFlow -> docs AI training -> docs AI Q&A/code tasks -> clean docs AI ask -> blockchain -> deployment
+syntax -> modules -> CLI -> web routes -> controllers -> templates -> auth -> database -> APIs -> errors -> AGI Meet media apps -> tests -> AIFlow -> docs AI training -> docs AI Q&A/code tasks -> clean docs AI ask -> blockchain -> deployment
 ```
