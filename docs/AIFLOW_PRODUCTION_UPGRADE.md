@@ -12,7 +12,51 @@ This upgrade moves the AIFlow modules away from demo-only language and into prod
 | ONNX | Descriptor executor plus optional real `.onnx` execution through `onnxruntime` |
 | GPU dispatch | CPU production fallbacks and optional torch/cupy backend detection/dispatch |
 | Distributed runtime | Local runtime and shared-filesystem allreduce coordinator |
+| Image preprocessing | JSON-array loading, optional Pillow image loading/saving, resize, crop, grayscale, normalization |
+| CLI | `agi ai ...` production commands for capability checks, tokenizers, language models, ONNX/GPU/distributed status and image preprocessing |
 | Platform gate | `ai_capabilities()` and `ai_deployment_gate()` for deployment checks |
+
+## Install optional production AI dependencies
+
+Base AGILANG remains dependency-light. For image and ONNX production work:
+
+```bash
+pip install "agilang[ai]"
+```
+
+For GPU ONNX Runtime environments:
+
+```bash
+pip install "agilang[ai-gpu]"
+```
+
+## CLI commands
+
+```bash
+# Capability report
+agi ai capabilities
+agi ai doctor
+agi ai doctor --require-onnxruntime
+agi ai doctor --require-gpu
+
+# Tokenizer lifecycle
+agi ai tokenizer-train --input corpus.txt --out models/tokenizer.json --merges 200
+agi ai tokenizer-train --text "agilang builds ai" --out models/tokenizer.json
+agi ai tokenizer-encode --model models/tokenizer.json --text "agilang builds ai" --bos --eos
+agi ai tokenizer-decode --model models/tokenizer.json --ids "[2,4,5,3]"
+
+# Small language model lifecycle
+agi ai lm-train --input corpus.txt --out models/domain-lm.agi-model --order 3 --merges 200
+agi ai lm-generate --model models/domain-lm.agi-model --prompt "agilang" --steps 32
+
+# Backend status
+agi ai onnx-status
+agi ai gpu-status
+agi ai distributed-status
+
+# Image preprocessing
+agi ai preprocess-image --input document.png --out storage/document.json --rows 224 --cols 224 --mode L
+```
 
 ## What remains external for heavy production
 
@@ -46,6 +90,17 @@ print(bundle.generate("agilang", steps=8))
 print(ai_capabilities())
 print(ai_deployment_gate(require_onnxruntime=False, require_gpu=False))
 ```
+
+## Image preprocessing path
+
+```python
+from agilang.image_ops import image_preprocess, save_image
+
+image = image_preprocess("document.png", rows=224, cols=224, mode="L", normalize=True)
+save_image("storage/document.json", image)
+```
+
+Image loading supports JSON pixel arrays without extra dependencies. PNG/JPEG/WebP requires Pillow.
 
 ## ONNX production path
 
