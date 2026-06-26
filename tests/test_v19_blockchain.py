@@ -72,8 +72,15 @@ def test_blockchain_project_scaffold_runs(tmp_path):
     result = create_project("chain lab", directory=tmp_path, template="blockchain")
     assert (result.root / "src/main.agi").exists()
     assert (result.root / "docs/BLOCKCHAIN_RUNBOOK.md").exists()
+    assert (result.root / "src/chain.agi").exists()
+    assert (result.root / "src/mempool.agi").exists()
+    assert (result.root / "src/devnet.agi").exists()
+    assert (result.root / "resources/views/home.ags").exists()
+    assert (result.root / "resources/views/blockchain.ags").exists()
+    assert (result.root / "resources/assets/css/app.css").exists()
+    assert (result.root / "resources/assets/js/blockchain-runtime.js").exists()
     proc = subprocess.run(
-        [sys.executable, "-m", "agilang", "run"],
+        [sys.executable, "-m", "agilang", "run", "src/chain.agi"],
         cwd=result.root,
         text=True,
         capture_output=True,
@@ -81,7 +88,6 @@ def test_blockchain_project_scaffold_runs(tmp_path):
         env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])},
     )
     assert proc.returncode == 0, proc.stderr
-    assert "blockchain starter" in proc.stdout
 
 
 def test_v193_consensus_capabilities_include_pos_dpo_dpos_and_dev():

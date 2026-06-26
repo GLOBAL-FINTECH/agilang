@@ -210,19 +210,153 @@ def generate_blockchain_app(
             return 0
         ''', files, force=force)
 
-    _write(root / "src/explorer.agi", '''
+    _write(root / "src/explorer.agi", f'''
+        import os
+
+        const APP_NAME = os.environ.get("APP_NAME", "{title}")
+        const APP_URL = os.environ.get("APP_URL", "http://127.0.0.1:8000").rstrip("/")
+        const DB_PATH = os.environ.get("DATABASE_PATH", "../storage/chain.sqlite")
+
+        fn db():
+            ensure_dir("../storage")
+            return sqlite_db(DB_PATH)
+
+        fn migrate_chain(chain_db):
+            chain_db.execute("create table if not exists blocks (id integer primary key autoincrement, height integer not null unique, hash text not null unique, proposer text not null, timestamp text not null default current_timestamp)")
+            chain_db.execute("create table if not exists transactions (id integer primary key autoincrement, block_height integer, sender text not null, receiver text not null, amount real not null, gas_price real not null, status text not null default 'pending', created_at text not null default current_timestamp)")
+            let existing = chain_db.one("select count(*) as total from blocks")
+            if existing["total"] == 0:
+                chain_db.execute("insert into blocks (height, hash, proposer) values (?, ?, ?)", [0, "genesis-hash-001", "0x04aac0173878aee604c1eaec3455ca8b5719f39b"])
+
+        fn create_app():
+            let chain_db = db()
+            migrate_chain(chain_db)
+            let app = web_app("{slug}", "True")
+            app.static("/assets", "../resources/assets")
+            app.after(security_headers())
+
+            fn home(request):
+                let view = render_ags("../resources/views/home.ags", {{"app_name": APP_NAME}})
+                return html_response(render_template("../resources/views/layout.ags", {{"title": view["meta"].get("title", APP_NAME), "seo": seo_tags(page_seo(view["meta"].get("title", APP_NAME), "/")), "body": view["body"]}}))
+
+            fn blockchain_status(request):
+                let blocks = chain_db.all("select * from blocks order by height desc limit 10")
+                let pending_txs = chain_db.all("select * from transactions where status = 'pending' limit 10")
+                return json_response({{"blocks": blocks, "pending_transactions": pending_txs, "status": "online", "app": APP_NAME}})
+
+            fn api_submit_tx(request):
+                let sender = request.query.get("sender", "0x04aac0173878aee604c1eaec3455ca8b5719f39b")
+                let receiver = request.query.get("receiver", "0x95e3673f703cb53b3c1848cd3def70a64c59fb08")
+                let amount = float(request.query.get("amount", "10"))
+                let gas_price = float(request.query.get("gas_price", "1"))
+                chain_db.execute("insert into transactions (sender, receiver, amount, gas_price) values (?, ?, ?, ?)", [sender, receiver, amount, gas_price])
+                return json_response({{"ok": True, "sender": sender, "receiver": receiver, "amount": amount, "gas_price": gas_price}})
+
+            fn api_produce_block(request):
+                let proposer = request.query.get("proposer", "0x04aac0173878aee604c1eaec3455ca8b5719f39b")
+                let latest = chain_db.one("select max(height) as max_height from blocks")
+                let new_height = latest["max_height"] + 1
+                let block_hash = "block-" + str(new_height) + "-" + str(random_int(10000, 99999))
+                chain_db.execute("insert into blocks (height, hash, proposer) values (?, ?, ?)", [new_height, block_hash, proposer])
+                chain_db.execute("update transactions set block_height = ?, status = 'confirmed' where status = 'pending' limit 5", [new_height])
+                return json_response({{"ok": True, "height": new_height, "hash": block_hash, "proposer": proposer}})
+
+            app.get("/", home, name="home")
+            app.get("/blockchain", blockchain_status, name="blockchain")
+            app.get("/api/submit-tx", api_submit_tx, name="api.submit_tx")
+            app.get("/api/produce-block", api_produce_block, name="api.produce_block")
+            return app
+
+        fn page_seo(title, path):
+            return {{"title": title, "description": "{title} is an AGILANG blockchain starter with PoS consensus and EVM hooks.", "canonical": APP_URL + path, "site_name": APP_NAME, "type": "website", "robots": "index,follow", "twitter_card": "summary"}}
+
         fn main() -> i32:
-            let view = render_ags("resources/views/explorer.ags", {"chain_name": "AGILANG Chain", "height": 0, "status": "ready"})
-            print(view["body"])
+            let app = create_app()
+            let server = app.listen("127.0.0.1", 0)
+            server.run_background()
+            print("{title} blockchain web UI:", web_get(server.url + "/blockchain"))
+            server.stop()
             return 0
         ''', files, force=force)
 
     _write(root / "resources/views/layout.ags", '''
-        <html>
-          <head><title>{{ title }}</title></head>
-          <body><main>{{ body }}</main></body>
+        <!doctype html>
+        <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>{{ title }}</title>
+          {{{ seo }}}
+          <link rel="stylesheet" href="/assets/css/app.css">
+          <script src="/assets/js/blockchain-runtime.js" defer></script>
+        </head>
+        <body>
+          {{{ body }}}
+        </body>
         </html>
         ''', files, force=force)
+
+    _write(root / "resources/views/home.ags", f'''
+        @page title="{title}" seo_description="AGILANG blockchain starter with PoS consensus and EVM hooks."
+        @fetch chain from "/blockchain"
+
+        <main class="shell hero">
+          <p class="eyebrow">AGILANG Blockchain Starter</p>
+          <h1>{{{{ app_name }}}}</h1>
+          <p>This page is <code>resources/views/home.ags</code>. It features a full blockchain framework with PoS consensus, mempool, and EVM hooks.</p>
+          <div class="actions">
+            <a class="button" href="/blockchain">View Blockchain</a>
+            <a class="button secondary" href="/api/submit-tx?sender=0x04aac0173878aee604c1eaec3455ca8b5719f39b&receiver=0x95e3673f703cb53b3c1848cd3def70a64c59fb08&amount=50">Submit Transaction</a>
+          </div>
+          <section class="stats">
+            <article><span>Blocks</span><strong>{{{{ len(chain.blocks) }}}}</strong></article>
+            <article><span>Pending TXs</span><strong>{{{{ len(chain.pending_transactions) }}}}</strong></article>
+            <article><span>Status</span><strong>Online</strong></article>
+          </section>
+        </main>
+        ''', files, force=force)
+
+    _write(root / "resources/views/blockchain.ags", f'''
+        @page title="{title} Blockchain" seo_description="Live blockchain dashboard with blocks and transactions."
+        @fetch chain from "/blockchain"
+
+        <main class="shell">
+          <p class="eyebrow">Blockchain Dashboard</p>
+          <h1>{{{{ app_name }}}} blockchain</h1>
+          <p>Real-time blockchain status with blocks and pending transactions.</p>
+          <section class="card-grid">
+            <article class="card"><span>Total Blocks</span><strong>{{{{ len(chain.blocks) }}}}</strong></article>
+            <article class="card"><span>Pending Transactions</span><strong>{{{{ len(chain.pending_transactions) }}}}</strong></article>
+            <article class="card"><span>Status</span><strong>{{{{ chain.status }}}}</strong></article>
+          </section>
+          <div class="actions" style="margin-top: 32px;">
+            <a class="button" href="/api/produce-block?proposer=0x04aac0173878aee604c1eaec3455ca8b5719f39b">Produce Block</a>
+            <a class="button secondary" href="/api/submit-tx?sender=0x04aac0173878aee604c1eaec3455ca8b5719f39b&receiver=0x95e3673f703cb53b3c1848cd3def70a64c59fb08&amount=25">Submit TX</a>
+          </div>
+          <section class="blocks-list">
+            <h2>Recent Blocks</h2>
+            {{% for block in chain.blocks %}}
+            <div class="block-item">
+              <span>#{{{{ block.height }}}}</span>
+              <span>{{{{ block.hash }}}}</span>
+              <span>{{{{ block.proposer }}}}</span>
+              <span>{{{{ block.timestamp }}}}</span>
+            </div>
+            {{% endfor %}}
+          </section>
+          <section class="txs-list">
+            <h2>Pending Transactions</h2>
+            {{% for tx in chain.pending_transactions %}}
+            <div class="tx-item">
+              <span>{{{{ tx.sender }}}} → {{{{ tx.receiver }}}}</span>
+              <span>{{{{ tx.amount }}}} ETH</span>
+              <span>{{{{ tx.gas_price }}}} Gwei</span>
+            </div>
+            {{% endfor %}}
+          </section>
+        </main>
+        ''', files, force=force)
+
     _write(root / "resources/views/explorer.ags", '''
         <section class="chain-explorer">
           <h1>{{ chain_name }}</h1>
@@ -230,11 +364,52 @@ def generate_blockchain_app(
           <p>Status: {{ status }}</p>
         </section>
         ''', files, force=force)
+
     _write(root / "resources/views/validator.ags", '''
         <section class="validator-dashboard">
           <h1>Validator Dashboard</h1>
           <p>Mode: {{ mode }}</p>
         </section>
+        ''', files, force=force)
+
+    _write(root / "resources/assets/css/app.css", '''
+        :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, Arial, sans-serif; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top left, #1a1a2e, #16213e 50%, #0f3460); color: #eef7ff; }
+        .shell { width: min(1040px, calc(100% - 32px)); margin: 0 auto; padding: 56px 0; }
+        .hero { min-height: 100vh; display: grid; align-content: center; }
+        .eyebrow { color: #e94560; letter-spacing: .14em; text-transform: uppercase; font-size: .78rem; font-weight: 800; }
+        h1 { font-size: clamp(2.4rem, 8vw, 5.5rem); line-height: .95; margin: 0 0 18px; }
+        h2 { font-size: 2rem; margin: 32px 0 16px; }
+        p { color: #b8cadc; font-size: 1.1rem; max-width: 760px; line-height: 1.6; }
+        code { color: #f9a826; }
+        .actions, .stats, .card-grid { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 26px; }
+        .button { background: #e94560; color: #0f3460; padding: 13px 18px; border-radius: 999px; text-decoration: none; font-weight: 800; }
+        .button.secondary { background: rgba(255,255,255,.1); color: #eef7ff; border: 1px solid rgba(255,255,255,.18); }
+        .stats article, .card { min-width: 190px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; padding: 20px; }
+        .stats span, .card span { display: block; color: #b8cadc; margin-bottom: 8px; }
+        .stats strong, .card strong { font-size: 1.8rem; }
+        .blocks-list, .txs-list { margin-top: 32px; }
+        .block-item, .tx-item { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; gap: 16px; }
+        .block-item span, .tx-item span { flex: 1; }
+        ''', files, force=force)
+
+    _write(root / "resources/assets/js/blockchain-runtime.js", '''
+        (function () {
+          async function updateElement(element, url) {
+            const response = await fetch(url, { headers: { Accept: "application/json" } });
+            const data = await response.json();
+            const value = element.getAttribute("data-blockchain-field") ? data[element.getAttribute("data-blockchain-field")] : data;
+            element.textContent = JSON.stringify(value, null, 2);
+          }
+          function hydrate() {
+            document.querySelectorAll("[data-blockchain-fetch]").forEach(function (element) {
+              updateElement(element, element.getAttribute("data-blockchain-fetch")).catch(function () {});
+            });
+          }
+          if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", hydrate);
+          else hydrate();
+        })();
         ''', files, force=force)
 
     _write(root / "config/genesis.json", json.dumps({"chain_id": chain_id, "name": title, "symbol": symbol, "decimals": decimals, "balances": DEFAULT_BALANCES, "validators": DEFAULT_VALIDATORS}, indent=2), files, force=force)

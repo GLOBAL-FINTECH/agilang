@@ -508,6 +508,9 @@ def _new(args: argparse.Namespace) -> None:
     if result.template in {"web", "api"}:
         print("  agi serve src/main.agi --host 127.0.0.1 --port 8000")
         print("  agi run src/realtime.agi")
+    elif result.template == "ai":
+        print("  agi serve src/main.agi --host 127.0.0.1 --port 8000")
+        print("  agi run src/model.agi")
     elif result.template == "systems":
         print("  agi run src/network.agi")
         print("  agi run src/evm.agi")
@@ -1125,7 +1128,7 @@ def _make_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("new", help="Create a new AGILANG project. Defaults to a full web starter.")
     p.add_argument("name", nargs="+", help="Project name. Multi-word names are accepted: agi new test app two")
-    p.add_argument("--template", choices=["web", "web-live", "api", "basic", "systems", "zk", "blockchain"], default="web", help="Starter template to generate")
+    p.add_argument("--template", choices=["web", "web-live", "api", "ai", "basic", "systems", "zk", "blockchain"], default="web", help="Starter template to generate")
     p.add_argument("--dir", help="Parent directory for the generated project")
     p.add_argument("--force", action="store_true", help="Allow writing into an existing project directory")
     p.set_defaults(func=_new)

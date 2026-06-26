@@ -37,7 +37,8 @@ def relu_feature_maps(feature_maps: Sequence[Sequence[Sequence[float]]]) -> dict
             for value in row:
                 v = float(value)
                 out_row.append(max(0.0, v))
-                mask_row.append(1.0 if v > 0.0 else 0.0)
+                # Let zero-initialized filters receive a first learning signal.
+                mask_row.append(1.0 if v >= 0.0 else 0.0)
             out_map.append(out_row)
             mask_map.append(mask_row)
         activated.append(out_map)

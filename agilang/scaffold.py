@@ -72,6 +72,7 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
     Templates:
     - ``web`` / ``web-live``: full web starter with templates/static/API/realtime example.
     - ``api``: API-focused starter.
+    - ``ai``: AI/ML starter with data processing, model inference, and web UI.
     - ``systems``: low-level networking + EVM systems starter.
     - ``zk``: zero-knowledge systems starter with circuits, commitments, Merkle proofs, and Schnorr demos.
     - ``blockchain``: full blockchain starter with PoS, mempool, fork choice, chain DB and EVM hooks.
@@ -80,8 +81,8 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
     template = (template or "web").lower()
     if template in {"web-live", "web-ags", "ags", "reactive"}:
         template = "web"
-    if template not in {"web", "api", "basic", "systems", "zk", "blockchain"}:
-        raise ValueError("template must be one of: web, web-live, web-ags, ags, reactive, api, basic, systems, zk, blockchain")
+    if template not in {"web", "api", "ai", "basic", "systems", "zk", "blockchain"}:
+        raise ValueError("template must be one of: web, web-live, web-ags, ags, reactive, api, ai, basic, systems, zk, blockchain")
     slug = slugify_project_name(name)
     title = titleize(slug)
     parent = Path(directory).expanduser().resolve() if directory else Path.cwd().resolve()
@@ -135,6 +136,208 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
                 print("Hello from {title}")
                 return 0
             ''', files)
+    elif template == "ai":
+        _write(root / "src/main.agi", f'''
+            import os
+
+            const APP_NAME = os.environ.get("APP_NAME", "{title}")
+            const APP_URL = os.environ.get("APP_URL", "http://127.0.0.1:8000").rstrip("/")
+            const DB_PATH = os.environ.get("DATABASE_PATH", "../storage/app.sqlite")
+
+            fn db():
+                ensure_dir("../storage")
+                return sqlite_db(DB_PATH)
+
+            fn migrate_app(app_db):
+                app_db.execute("create table if not exists predictions (id integer primary key autoincrement, model text not null, input text not null, output text not null, confidence real, created_at text not null default current_timestamp)")
+                let existing = app_db.one("select count(*) as total from predictions")
+                if existing["total"] == 0:
+                    app_db.execute("insert into predictions (model, input, output, confidence) values (?, ?, ?, ?)", ["demo-model", "sample input", "sample output", 0.95])
+
+            fn create_app():
+                let app_db = db()
+                migrate_app(app_db)
+                let app = web_app("{slug}", "True")
+                app.static("/assets", "../resources/assets")
+                app.after(security_headers())
+
+                fn home(request):
+                    let view = render_ags("../resources/views/home.ags", {{"app_name": APP_NAME}})
+                    return html_response(render_template("../resources/views/layout.ags", {{"title": view["meta"].get("title", APP_NAME), "seo": seo_tags(page_seo(view["meta"].get("title", APP_NAME), "/")), "body": view["body"]}}))
+
+                fn predict(request):
+                    let predictions = app_db.all("select * from predictions order by created_at desc limit 10")
+                    return json_response({{"predictions": predictions, "status": "online", "app": APP_NAME}})
+
+                fn api_predict(request):
+                    let model = request.query.get("model", "default")
+                    let input = request.query.get("input", "test")
+                    let confidence = 0.85 + random() * 0.14
+                    let output = "AI processed: " + input
+                    return json_response({{"model": model, "input": input, "output": output, "confidence": confidence}})
+
+                app.get("/", home, name="home")
+                app.get("/predict", predict, name="predict")
+                app.get("/api/predict", api_predict, name="api.predict")
+                return app
+
+            fn page_seo(title, path):
+                return {{"title": title, "description": "{title} is an AGILANG AI/ML starter with model inference and data processing.", "canonical": APP_URL + path, "site_name": APP_NAME, "type": "website", "robots": "index,follow", "twitter_card": "summary"}}
+
+            fn main() -> i32:
+                let app = create_app()
+                let server = app.listen("127.0.0.1", 0)
+                server.run_background()
+                print("{title} AI check:", web_get(server.url + "/api/predict"))
+                server.stop()
+                return 0
+            ''', files)
+
+        _write(root / "src/model.agi", f'''
+            fn main() -> i32:
+                print("{title} AI model inference")
+                let data = [1.0, 2.0, 3.0, 4.0, 5.0]
+                let mean = sum(data) / len(data)
+                print("data mean", mean)
+                let prediction = ai_predict(data, "linear-regression")
+                print("prediction", prediction)
+                return 0
+            ''', files)
+
+        _write(root / "resources/views/layout.ags", '''
+            <!doctype html>
+            <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>{{ title }}</title>
+              {{{ seo }}}
+              <link rel="stylesheet" href="/assets/css/app.css">
+              <script src="/assets/js/ai-runtime.js" defer></script>
+            </head>
+            <body>
+              {{{ body }}}
+            </body>
+            </html>
+            ''', files)
+
+        _write(root / "resources/views/home.ags", f'''
+            @page title="{title}" seo_description="AGILANG AI/ML starter with model inference and data processing."
+            @fetch predictions from "/predict"
+
+            <main class="shell hero">
+              <p class="eyebrow">AGILANG AI/ML starter</p>
+              <h1>{{{{ app_name }}}}</h1>
+              <p>This page is <code>resources/views/home.ags</code>. It features AI model inference and data processing capabilities.</p>
+              <div class="actions">
+                <a class="button" href="/predict">View predictions</a>
+                <a class="button secondary" href="/api/predict?model=test&input=hello">Test API</a>
+              </div>
+              <section class="stats">
+                <article><span>Models</span><strong>3</strong></article>
+                <article><span>Predictions</span><strong>{{{{ len(predictions.predictions) }}}}</strong></article>
+                <article><span>Status</span><strong>Online</strong></article>
+              </section>
+            </main>
+            ''', files)
+
+        _write(root / "resources/views/predict.ags", f'''
+            @page title="{title} Predictions" seo_description="AI model predictions dashboard."
+            @fetch predictions from "/predict"
+
+            <main class="shell">
+              <p class="eyebrow">AI Predictions</p>
+              <h1>{{{{ app_name }}}} predictions</h1>
+              <p>Recent AI model predictions and inference results.</p>
+              <section class="card-grid">
+                <article class="card"><span>Total Predictions</span><strong>{{{{ len(predictions.predictions) }}}}</strong></article>
+                <article class="card"><span>Status</span><strong>{{{{ predictions.status }}}}</strong></article>
+              </section>
+              <div class="predictions-list">
+                {{% for pred in predictions.predictions %}}
+                <div class="prediction-item">
+                  <span>{{{{ pred.model }}}}</span>
+                  <span>{{{{ pred.input }}}} → {{{{ pred.output }}}}</span>
+                  <span>{{{{ pred.confidence }}}}</span>
+                </div>
+                {{% endfor %}}
+              </div>
+            </main>
+            ''', files)
+
+        _write(root / "resources/assets/css/app.css", '''
+            :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, Arial, sans-serif; }
+            * { box-sizing: border-box; }
+            body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top left, #1a365d, #0a1628 50%, #02050a); color: #eef7ff; }
+            .shell { width: min(1040px, calc(100% - 32px)); margin: 0 auto; padding: 56px 0; }
+            .hero { min-height: 100vh; display: grid; align-content: center; }
+            .eyebrow { color: #63b3ed; letter-spacing: .14em; text-transform: uppercase; font-size: .78rem; font-weight: 800; }
+            h1 { font-size: clamp(2.4rem, 8vw, 5.5rem); line-height: .95; margin: 0 0 18px; }
+            p { color: #b8cadc; font-size: 1.1rem; max-width: 760px; line-height: 1.6; }
+            code { color: #68d391; }
+            .actions, .stats, .card-grid { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 26px; }
+            .button { background: #63b3ed; color: #02121f; padding: 13px 18px; border-radius: 999px; text-decoration: none; font-weight: 800; }
+            .button.secondary { background: rgba(255,255,255,.1); color: #eef7ff; border: 1px solid rgba(255,255,255,.18); }
+            .stats article, .card { min-width: 190px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; padding: 20px; }
+            .stats span, .card span { display: block; color: #b8cadc; margin-bottom: 8px; }
+            .stats strong, .card strong { font-size: 1.8rem; }
+            .predictions-list { margin-top: 32px; }
+            .prediction-item { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; gap: 16px; }
+            .prediction-item span { flex: 1; }
+            ''', files)
+
+        _write(root / "resources/assets/js/ai-runtime.js", '''
+            (function () {
+              async function updateElement(element, url) {
+                const response = await fetch(url, { headers: { Accept: "application/json" } });
+                const data = await response.json();
+                const value = element.getAttribute("data-ai-field") ? data[element.getAttribute("data-ai-field")] : data;
+                element.textContent = JSON.stringify(value, null, 2);
+              }
+              function hydrate() {
+                document.querySelectorAll("[data-ai-fetch]").forEach(function (element) {
+                  updateElement(element, element.getAttribute("data-ai-fetch")).catch(function () {});
+                });
+              }
+              if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", hydrate);
+              else hydrate();
+            })();
+            ''', files)
+
+        _write(root / "public/css/app.css", '''
+            @import url("/assets/css/app.css");
+            ''', files)
+
+        _write(root / "storage/.gitkeep", "\n", files)
+
+        _write(root / "docs/AI_RUNBOOK.md", f'''
+            # {title} AI/ML Runbook
+
+            Run the starter:
+
+            ```bash
+            agi run
+            agi run src/model.agi
+            agi serve src/main.agi --host 127.0.0.1 --port 8000
+            ```
+
+            ## Features
+
+            - AI model inference interface
+            - Data processing pipelines
+            - Prediction tracking database
+            - Real-time prediction API
+            - Web dashboard for model monitoring
+
+            ## API Endpoints
+
+            - `GET /` - Home page with AI stats
+            - `GET /predict` - Predictions dashboard
+            - `GET /api/predict?model=X&input=Y` - Model inference API
+
+            This template provides a foundation for AI/ML applications with AGILANG.
+            ''', files)
+
     elif template == "systems":
         _write(root / "src/main.agi", f'''
             fn main() -> i32:
@@ -219,22 +422,74 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
 
     elif template == "blockchain":
         _write(root / "src/main.agi", f'''
+            import os
+
+            const APP_NAME = os.environ.get("APP_NAME", "{title}")
+            const APP_URL = os.environ.get("APP_URL", "http://127.0.0.1:8000").rstrip("/")
+            const DB_PATH = os.environ.get("DATABASE_PATH", "../storage/chain.sqlite")
+
+            fn db():
+                ensure_dir("../storage")
+                return sqlite_db(DB_PATH)
+
+            fn migrate_chain(chain_db):
+                chain_db.execute("create table if not exists blocks (id integer primary key autoincrement, height integer not null unique, hash text not null unique, proposer text not null, timestamp text not null default current_timestamp)")
+                chain_db.execute("create table if not exists transactions (id integer primary key autoincrement, block_height integer, sender text not null, receiver text not null, amount real not null, gas_price real not null, status text not null default 'pending', created_at text not null default current_timestamp)")
+                let existing = chain_db.one("select count(*) as total from blocks")
+                if existing["total"] == 0:
+                    chain_db.execute("insert into blocks (height, hash, proposer) values (?, ?, ?)", [0, "genesis-hash-001", "alice"])
+
+            fn create_app():
+                let chain_db = db()
+                migrate_chain(chain_db)
+                let app = web_app("{slug}", "True")
+                app.static("/assets", "../resources/assets")
+                app.after(security_headers())
+
+                fn home(request):
+                    let view = render_ags("../resources/views/home.ags", {{"app_name": APP_NAME}})
+                    return html_response(render_template("../resources/views/layout.ags", {{"title": view["meta"].get("title", APP_NAME), "seo": seo_tags(page_seo(view["meta"].get("title", APP_NAME), "/")), "body": view["body"]}}))
+
+                fn blockchain_status(request):
+                    let blocks = chain_db.all("select * from blocks order by height desc limit 10")
+                    let pending_txs = chain_db.all("select * from transactions where status = 'pending' limit 10")
+                    return json_response({{"blocks": blocks, "pending_transactions": pending_txs, "status": "online", "app": APP_NAME}})
+
+                fn api_submit_tx(request):
+                    let sender = request.query.get("sender", "alice")
+                    let receiver = request.query.get("receiver", "bob")
+                    let amount = float(request.query.get("amount", "10"))
+                    let gas_price = float(request.query.get("gas_price", "1"))
+                    chain_db.execute("insert into transactions (sender, receiver, amount, gas_price) values (?, ?, ?, ?)", [sender, receiver, amount, gas_price])
+                    return json_response({{"ok": True, "sender": sender, "receiver": receiver, "amount": amount, "gas_price": gas_price}})
+
+                fn api_produce_block(request):
+                    let proposer = request.query.get("proposer", "alice")
+                    let latest = chain_db.one("select max(height) as max_height from blocks")
+                    let new_height = latest["max_height"] + 1
+                    let block_hash = "block-" + str(new_height) + "-" + str(random_int(10000, 99999))
+                    chain_db.execute("insert into blocks (height, hash, proposer) values (?, ?, ?)", [new_height, block_hash, proposer])
+                    chain_db.execute("update transactions set block_height = ?, status = 'confirmed' where status = 'pending' limit 5", [new_height])
+                    return json_response({{"ok": True, "height": new_height, "hash": block_hash, "proposer": proposer}})
+
+                app.get("/", home, name="home")
+                app.get("/blockchain", blockchain_status, name="blockchain")
+                app.get("/api/submit-tx", api_submit_tx, name="api.submit_tx")
+                app.get("/api/produce-block", api_produce_block, name="api.produce_block")
+                return app
+
+            fn page_seo(title, path):
+                return {{"title": title, "description": "{title} is an AGILANG blockchain starter with PoS consensus and EVM hooks.", "canonical": APP_URL + path, "site_name": APP_NAME, "type": "website", "robots": "index,follow", "twitter_card": "summary"}}
+
             fn main() -> i32:
-                print("{title} blockchain starter")
-                print("capabilities", blockchain_capabilities())
-                let cfg = blockchain_config(chain_id=1900, name="{slug}", validators={{"alice": 60, "bob": 40}}, genesis_state={{"balances": {{"alice": 1000, "bob": 250}}}}, slot_seconds=1)
-                let node = blockchain_node(cfg, "../storage/chain.sqlite", "alice-node")
-                let tx = blockchain_transaction("alice", "bob", 25, nonce=1, gas_price=1)
-                let added = node.submit_tx(tx)
-                print("mempool add", added)
-                let parent = node.head()
-                let slot = parent["slot"] + 1
-                let proposer = node.consensus.select_proposer(parent["hash"], slot)
-                let produced = node.produce_and_import_block(proposer, slot)
-                print("block", produced["block"]["height"], produced["block"]["hash"])
-                print("status", node.status())
+                let app = create_app()
+                let server = app.listen("127.0.0.1", 0)
+                server.run_background()
+                print("{title} blockchain check:", web_get(server.url + "/blockchain"))
+                server.stop()
                 return 0
             ''', files)
+
         _write(root / "src/chain.agi", f'''
             fn main() -> i32:
                 let cfg = blockchain_config(chain_id=1900, name="{slug}", validators={{"alice": 70, "bob": 30}}, slot_seconds=1)
@@ -243,6 +498,7 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
                 print("finalized", node.finalized_head())
                 return 0
             ''', files)
+
         _write(root / "src/mempool.agi", f'''
             fn main() -> i32:
                 let cfg = blockchain_config(chain_id=1900, name="{slug}", validators={{"alice": 100}})
@@ -254,6 +510,7 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
                 print(node.mempool_status())
                 return 0
             ''', files)
+
         _write(root / "src/devnet.agi", f'''
             fn main() -> i32:
                 let cfg = blockchain_config(chain_id=1900, name="{slug}-devnet", validators={{"alice": 60, "bob": 40}}, slot_seconds=1)
@@ -264,6 +521,7 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
                 print("sync", net.sync_all())
                 return 0
             ''', files)
+
         _write(root / "src/evm_contract.agi", f'''
             fn main() -> i32:
                 let code = evm_bytecode_builder().push(42).push(0).mstore().push(32).push(0).return_().hex()
@@ -271,6 +529,131 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
                 print("evm", result)
                 return 0
             ''', files)
+
+        _write(root / "resources/views/layout.ags", '''
+            <!doctype html>
+            <html lang="en">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>{{ title }}</title>
+              {{{ seo }}}
+              <link rel="stylesheet" href="/assets/css/app.css">
+              <script src="/assets/js/blockchain-runtime.js" defer></script>
+            </head>
+            <body>
+              {{{ body }}}
+            </body>
+            </html>
+            ''', files)
+
+        _write(root / "resources/views/home.ags", f'''
+            @page title="{title}" seo_description="AGILANG blockchain starter with PoS consensus and EVM hooks."
+            @fetch chain from "/blockchain"
+
+            <main class="shell hero">
+              <p class="eyebrow">AGILANG Blockchain Starter</p>
+              <h1>{{{{ app_name }}}}</h1>
+              <p>This page is <code>resources/views/home.ags</code>. It features a full blockchain framework with PoS consensus, mempool, and EVM hooks.</p>
+              <div class="actions">
+                <a class="button" href="/blockchain">View Blockchain</a>
+                <a class="button secondary" href="/api/submit-tx?sender=alice&receiver=bob&amount=50">Submit Transaction</a>
+              </div>
+              <section class="stats">
+                <article><span>Blocks</span><strong>{{{{ len(chain.blocks) }}}}</strong></article>
+                <article><span>Pending TXs</span><strong>{{{{ len(chain.pending_transactions) }}}}</strong></article>
+                <article><span>Status</span><strong>Online</strong></article>
+              </section>
+            </main>
+            ''', files)
+
+        _write(root / "resources/views/blockchain.ags", f'''
+            @page title="{title} Blockchain" seo_description="Live blockchain dashboard with blocks and transactions."
+            @fetch chain from "/blockchain"
+
+            <main class="shell">
+              <p class="eyebrow">Blockchain Dashboard</p>
+              <h1>{{{{ app_name }}}} blockchain</h1>
+              <p>Real-time blockchain status with blocks and pending transactions.</p>
+              <section class="card-grid">
+                <article class="card"><span>Total Blocks</span><strong>{{{{ len(chain.blocks) }}}}</strong></article>
+                <article class="card"><span>Pending Transactions</span><strong>{{{{ len(chain.pending_transactions) }}}}</strong></article>
+                <article class="card"><span>Status</span><strong>{{{{ chain.status }}}}</strong></article>
+              </section>
+              <div class="actions" style="margin-top: 32px;">
+                <a class="button" href="/api/produce-block?proposer=alice">Produce Block</a>
+                <a class="button secondary" href="/api/submit-tx?sender=alice&receiver=bob&amount=25">Submit TX</a>
+              </div>
+              <section class="blocks-list">
+                <h2>Recent Blocks</h2>
+                {{% for block in chain.blocks %}}
+                <div class="block-item">
+                  <span>#{{{{ block.height }}}}</span>
+                  <span>{{{{ block.hash }}}}</span>
+                  <span>{{{{ block.proposer }}}}</span>
+                  <span>{{{{ block.timestamp }}}}</span>
+                </div>
+                {{% endfor %}}
+              </section>
+              <section class="txs-list">
+                <h2>Pending Transactions</h2>
+                {{% for tx in chain.pending_transactions %}}
+                <div class="tx-item">
+                  <span>{{{{ tx.sender }}}} → {{{{ tx.receiver }}}}</span>
+                  <span>{{{{ tx.amount }}}} ETH</span>
+                  <span>{{{{ tx.gas_price }}}} Gwei</span>
+                </div>
+                {{% endfor %}}
+              </section>
+            </main>
+            ''', files)
+
+        _write(root / "resources/assets/css/app.css", '''
+            :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, Arial, sans-serif; }
+            * { box-sizing: border-box; }
+            body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top left, #1a1a2e, #16213e 50%, #0f3460); color: #eef7ff; }
+            .shell { width: min(1040px, calc(100% - 32px)); margin: 0 auto; padding: 56px 0; }
+            .hero { min-height: 100vh; display: grid; align-content: center; }
+            .eyebrow { color: #e94560; letter-spacing: .14em; text-transform: uppercase; font-size: .78rem; font-weight: 800; }
+            h1 { font-size: clamp(2.4rem, 8vw, 5.5rem); line-height: .95; margin: 0 0 18px; }
+            h2 { font-size: 2rem; margin: 32px 0 16px; }
+            p { color: #b8cadc; font-size: 1.1rem; max-width: 760px; line-height: 1.6; }
+            code { color: #f9a826; }
+            .actions, .stats, .card-grid { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 26px; }
+            .button { background: #e94560; color: #0f3460; padding: 13px 18px; border-radius: 999px; text-decoration: none; font-weight: 800; }
+            .button.secondary { background: rgba(255,255,255,.1); color: #eef7ff; border: 1px solid rgba(255,255,255,.18); }
+            .stats article, .card { min-width: 190px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 20px; padding: 20px; }
+            .stats span, .card span { display: block; color: #b8cadc; margin-bottom: 8px; }
+            .stats strong, .card strong { font-size: 1.8rem; }
+            .blocks-list, .txs-list { margin-top: 32px; }
+            .block-item, .tx-item { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 16px; margin-bottom: 12px; display: flex; gap: 16px; }
+            .block-item span, .tx-item span { flex: 1; }
+            ''', files)
+
+        _write(root / "resources/assets/js/blockchain-runtime.js", '''
+            (function () {
+              async function updateElement(element, url) {
+                const response = await fetch(url, { headers: { Accept: "application/json" } });
+                const data = await response.json();
+                const value = element.getAttribute("data-blockchain-field") ? data[element.getAttribute("data-blockchain-field")] : data;
+                element.textContent = JSON.stringify(value, null, 2);
+              }
+              function hydrate() {
+                document.querySelectorAll("[data-blockchain-fetch]").forEach(function (element) {
+                  updateElement(element, element.getAttribute("data-blockchain-fetch")).catch(function () {});
+                });
+              }
+              if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", hydrate);
+              else hydrate();
+            })();
+            ''', files)
+
+        _write(root / "public/css/app.css", '''
+            @import url("/assets/css/app.css");
+            ''', files)
+
+        _write(root / "storage/.gitkeep", "\n", files)
+
         _write(root / "config/validators.json", f'''
             {{
               "chain_id": 1900,
@@ -285,20 +668,30 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
               "block_gas_limit": 30000000
             }}
             ''', files)
+
         _write(root / "docs/BLOCKCHAIN_RUNBOOK.md", f'''
             # {title} Blockchain Runbook
 
-            This starter is a configurable AGILANG private-chain/devnet framework.
+            This starter is a configurable AGILANG private-chain/devnet framework with web UI.
 
             ## Start
 
             ```bash
             agi run
+            agi serve src/main.agi --host 127.0.0.1 --port 8000
             agi run src/chain.agi
             agi run src/mempool.agi
             agi run src/devnet.agi
             agi run src/evm_contract.agi
             ```
+
+            ## Web UI
+
+            Open: <http://127.0.0.1:8000>
+            - Home page with blockchain stats
+            - `/blockchain` - Live blockchain dashboard
+            - `/api/submit-tx` - Submit transactions via API
+            - `/api/produce-block` - Produce new blocks via API
 
             ## CLI tools
 
@@ -315,6 +708,7 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
 
             ## Included modules
 
+            - Web UI with live blockchain dashboard
             - selectable Proof-of-Stake, DPoS/DPO and Dev consensus
             - proposer selection and block validation
             - optional mainnet-profile block-signature validation
@@ -598,7 +992,13 @@ def create_project(name: str, *, directory: str | Path | None = None, template: 
         ```
         ''', files)
 
-    if template != "basic":
+    if template not in {"basic", "ai", "blockchain"}:
+        _copy_vendor_runtime(root, files)
+        from .cgi_runtime import write_shared_hosting_files
+        hosting = write_shared_hosting_files(root, entry="src/main.agi", target="public_html", mode="auto", force=True)
+        files.extend(hosting.files)
+
+    if template in {"ai", "blockchain"}:
         _copy_vendor_runtime(root, files)
         from .cgi_runtime import write_shared_hosting_files
         hosting = write_shared_hosting_files(root, entry="src/main.agi", target="public_html", mode="auto", force=True)

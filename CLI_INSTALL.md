@@ -11,14 +11,14 @@ agi --version
 
 ## Windows
 
-From PowerShell in the app project root:
+From PowerShell in the project root:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass -Force
 .\installer.ps1
 ```
 
-Or from PowerShell in this `docs` folder:
+Or from PowerShell in the project root:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass -Force
@@ -27,7 +27,7 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 
 ## Linux
 
-From a terminal in this folder:
+From a terminal in the project root:
 
 ```sh
 sh scripts/install_linux.sh
@@ -35,7 +35,7 @@ sh scripts/install_linux.sh
 
 ## macOS
 
-From Terminal in this folder:
+From Terminal in the project root:
 
 ```sh
 sh scripts/install_macos.sh

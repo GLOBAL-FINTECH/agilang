@@ -10,3 +10,7 @@ release/
 .agilang/deps/
 *.agipkg
 *.exe
+# Local generated scaffold test apps
+my-ai-app/
+my-blockchain-app/
+my-blockchain-test/
