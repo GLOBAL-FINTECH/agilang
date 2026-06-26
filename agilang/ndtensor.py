@@ -1,47 +1,82 @@
 """AGILANG native ND tensor and reverse-mode autodiff engine.
 
-This is the next core layer toward a TensorFlow replacement. It implements a
-small scalar/list-backed tensor engine with reverse-mode autodiff for common
-training operations. The design is intentionally simple and auditable before
-native C/WASM/GPU kernels are added.
+This is the next core layer toward an AGILANG-native tensor runtime. It implements
+a scalar/list-backed tensor engine with reverse-mode autodiff for common training
+operations. The design is intentionally simple and auditable before native
+C/WASM/GPU kernels are expanded.
 """
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Sequence
+
+
+def _infer_shape(data: Any) -> tuple[int, ...]:
+    if isinstance(data, NDTensor):
+        return data.shape
+    if isinstance(data, (int, float)):
+        return ()
+    if isinstance(data, list):
+        if not data:
+            return (0,)
+        child = _infer_shape(data[0])
+        for item in data:
+            if _infer_shape(item) != child:
+                raise ValueError("ragged tensors are not supported")
+        return (len(data),) + child
+    raise TypeError(f"unsupported tensor data: {type(data).__name__}")
+
+
+def _flatten_values(data: Any) -> list[float]:
+    if isinstance(data, NDTensor):
+        return list(data.data)
+    if isinstance(data, (int, float)):
+        return [float(data)]
+    if isinstance(data, list):
+        out: list[float] = []
+        for item in data:
+            out.extend(_flatten_values(item))
+        return out
+    raise TypeError(f"unsupported tensor data: {type(data).__name__}")
 
 
 def _flatten(data: Any) -> tuple[list[float], tuple[int, ...]]:
     if isinstance(data, NDTensor):
         return list(data.data), data.shape
-    if isinstance(data, (int, float)):
-        return [float(data)], ()
-    if isinstance(data, list):
-        if not data:
-            return [], (0,)
-        if isinstance(data[0], list):
-            rows = len(data)
-            cols = len(data[0])
-            flat: list[float] = []
-            for row in data:
-                if len(row) != cols:
-                    raise ValueError("ragged tensors are not supported")
-                flat.extend(float(v) for v in row)
-            return flat, (rows, cols)
-        return [float(v) for v in data], (len(data),)
-    raise TypeError(f"unsupported tensor data: {type(data).__name__}")
+    shape = _infer_shape(data)
+    return _flatten_values(data), shape
+
+
+def _numel(shape: tuple[int, ...]) -> int:
+    if shape == ():
+        return 1
+    total = 1
+    for dim in shape:
+        total *= int(dim)
+    return total
 
 
 def _unflatten(flat: Sequence[float], shape: tuple[int, ...]) -> Any:
+    values = [float(v) for v in flat]
     if shape == ():
-        return float(flat[0]) if flat else 0.0
-    if len(shape) == 1:
-        return [float(v) for v in flat]
-    if len(shape) == 2:
-        rows, cols = shape
-        return [[float(flat[i * cols + j]) for j in range(cols)] for i in range(rows)]
-    return [float(v) for v in flat]
+        return values[0] if values else 0.0
+    if not shape:
+        return values[0] if values else 0.0
+
+    def build(offset: int, dims: tuple[int, ...]) -> tuple[Any, int]:
+        if not dims:
+            return (values[offset] if offset < len(values) else 0.0), offset + 1
+        size = int(dims[0])
+        row = []
+        current = offset
+        for _ in range(size):
+            item, current = build(current, dims[1:])
+            row.append(item)
+        return row, current
+
+    result, _ = build(0, shape)
+    return result
 
 
 def _same_shape(a: "NDTensor", b: "NDTensor") -> None:
@@ -60,11 +95,7 @@ class NDTensor:
     name: str | None = None
 
     def __post_init__(self) -> None:
-        expected = 1
-        for dim in self.shape:
-            expected *= dim
-        if self.shape == ():
-            expected = 1
+        expected = _numel(self.shape)
         if expected != len(self.data):
             raise ValueError(f"data length {len(self.data)} does not match shape {self.shape}")
         if self.requires_grad and self.grad is None:
@@ -231,7 +262,7 @@ def mse(y_pred: Any, y_true: Any) -> NDTensor:
 
 def softmax(values: Any) -> list[float]:
     t = ndtensor(values)
-    m = max(t.data)
+    m = max(t.data) if t.data else 0.0
     exps = [math.exp(v - m) for v in t.data]
     total = sum(exps) or 1.0
     return [v / total for v in exps]
