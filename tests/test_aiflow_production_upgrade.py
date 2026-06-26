@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from agilang.ai_platform import ai_deployment_gate, require_ai_capability
+from agilang.ai_platform import ai_capabilities, ai_deployment_gate, require_ai_capability
 from agilang.bpe_tokenizer import BPETokenizer
 from agilang.cli_runtime import main as cli_main
+from agilang.cuda_backend import native_gpu_status
 from agilang.distributed_runtime import DistributedConfig, DistributedRuntime, WorkerSpec, allreduce_average
 from agilang.gpu_kernel_registry import default_registry, dispatch_kernel
 from agilang.image_ops import image_preprocess, load_image, resize_bilinear, rgb_to_grayscale, save_image
 from agilang.llm_trainer import LanguageModelBundle, train_ngram_lm
 from agilang.onnx_tier1_runtime import execute_graph, onnx_runtime_status
+from agilang.torch_compat import Tensor, mse_loss, nn, optim, tensor, torch_compat_status
 from agilang.transformer_runtime import ProductionTransformerRuntime
 
 
@@ -67,9 +69,12 @@ def test_distributed_runtime_local_and_filesystem_single_worker(tmp_path):
 
 def test_ai_platform_deployment_gate():
     assert require_ai_capability("tokenizer")["production"] is True
+    assert require_ai_capability("torch_compat")["production"] is True
     gate = ai_deployment_gate()
     assert gate["ok"] is True
     assert "capabilities" in gate["report"]
+    strict = ai_deployment_gate(require_full_torch_parity=True)
+    assert strict["ok"] is False
 
 
 def test_image_ops_json_load_preprocess_and_save(tmp_path):
@@ -99,3 +104,29 @@ def test_ai_cli_doctor_and_tokenizer_roundtrip(tmp_path, capsys):
     assert cli_main(["ai", "tokenizer-encode", "--model", str(out), "--text", "hello agilang"]) == 0
     captured = capsys.readouterr().out
     assert "ids" in captured
+
+
+def test_torch_compat_tensor_module_optimizer_and_status(tmp_path):
+    x = tensor([[1.0, 2.0]], requires_grad=False)
+    model = nn.Sequential(nn.Linear(2, 2), nn.ReLU(), nn.Linear(2, 1))
+    y = model(x)
+    assert isinstance(y, Tensor)
+    loss = mse_loss(y, tensor([[1.0]]))
+    loss.backward()
+    optimizer = optim.SGD(model.parameters(), lr=0.01)
+    optimizer.step()
+    status = torch_compat_status()
+    assert status["backend"] == "agilang-native-ndtensor"
+    from agilang.torch_compat import save, load
+    path = save(y, tmp_path / "tensor.json")
+    loaded = load(path)
+    assert isinstance(loaded, Tensor)
+
+
+def test_native_gpu_status_and_ai_report():
+    status = native_gpu_status()
+    assert "available" in status
+    report = ai_capabilities()
+    names = {cap["name"] for cap in report["capabilities"]}
+    assert "native_gpu_backend" in names
+    assert "pytorch_full_parity" in names
