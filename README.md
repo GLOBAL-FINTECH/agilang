@@ -2,8 +2,6 @@
 
 AGILANG is a modular programming language and application runtime for building web apps, APIs, dashboards, CMS/blog systems, real-time apps, blockchain-enabled applications, and native AI/ML workflows using `.agi` source files and `.ags` reactive templates.
 
-AGILANG is designed to be simple to learn, lightweight to deploy, and structured like a modern full-stack framework.
-
 ```text
 learn AGILANG -> create an app -> run .agi files -> train AI models -> deploy
 ```
@@ -21,7 +19,7 @@ learn AGILANG -> create an app -> run .agi files -> train AI models -> deploy
 | Templates | `.ags` reactive templates |
 | Web framework | Laravel-style app structure, routes, controllers, config, auth pages |
 | Blockchain | SBQ/EVM-style app generator, beacon, validators, RPC, mempool, consensus profile |
-| AIFlow | Native ML, CNN training, dataset engine, tokenizer, transformer starter, ONNX reference runtime |
+| AIFlow | Native ML, CNN training, AGIRecord datasets, BPE tokenizer, transformer starter, ONNX reference runtime |
 | Deployment | Vendored runtime support for portable generated projects |
 
 ---
@@ -30,57 +28,70 @@ learn AGILANG -> create an app -> run .agi files -> train AI models -> deploy
 
 ```bash
 pip install -e .
-```
-
-Check the CLI:
-
-```bash
 agi --help
-```
-
-Run an AGILANG file:
-
-```bash
 agi run examples/hello.agi
-```
-
-Run tests:
-
-```bash
 python -m pytest -q
-```
-
-Compile check:
-
-```bash
 python -m compileall -q agilang tests
 ```
 
 ---
 
-# AGILANG project generation
-
-## Create an AI runtime app
+# AGILANG AI runtime app generation
 
 The AI runtime generator creates **AGILANG entrypoints**, not Python launchers.
 
 ```bash
-agi new my-ai --template ai
+agi new my-ai --template ai --force
 cd my-ai
 ```
 
-Generated root files:
+Generated root entrypoints:
 
 ```text
 run.agi
+dataset.agi
 train.agi
 infer.agi
-dataset.agi
+cnn.agi
+llm.agi
+onnx.agi
+gpu.agi
+distributed.agi
 benchmark.agi
 transformer.agi
 ```
 
-Run the generated AI app:
+Generated source files:
+
+```text
+src/ai_runtime.agi
+src/dataset.agi
+src/train.agi
+src/infer.agi
+src/cnn.agi
+src/llm.agi
+src/onnx.agi
+src/gpu.agi
+src/distributed.agi
+src/benchmark.agi
+src/transformer.agi
+```
+
+The generator does **not** create app-facing Python launchers:
+
+```text
+run.py
+train.py
+infer.py
+```
+
+The current AGILANG implementation may still use a Python-hosted runtime internally, but the generated project surface is AGILANG-native.
+
+---
+
+## AI runtime commands, command by command
+
+Show the AI runtime menu:
 
 ```bash
 agi run run.agi
@@ -104,6 +115,36 @@ Run inference workflow:
 agi run infer.agi
 ```
 
+Run CNN workflow:
+
+```bash
+agi run cnn.agi
+```
+
+Run language model workflow:
+
+```bash
+agi run llm.agi
+```
+
+Run ONNX Tier 1 workflow:
+
+```bash
+agi run onnx.agi
+```
+
+Run GPU planner workflow:
+
+```bash
+agi run gpu.agi
+```
+
+Run distributed planner workflow:
+
+```bash
+agi run distributed.agi
+```
+
 Run benchmark workflow:
 
 ```bash
@@ -116,26 +157,11 @@ Run transformer workflow:
 agi run transformer.agi
 ```
 
-Force recreate:
-
-```bash
-agi new my-ai --template ai --force
-```
-
 Generate without vendored runtime:
 
 ```bash
 agi new my-ai --template ai --no-vendor
 ```
-
-Important rule:
-
-```text
-Generated AI application entrypoints are .agi files.
-The generator does not create run.py, train.py, infer.py, or benchmark.py as app-facing commands.
-```
-
-The current runtime backend may still be Python-hosted internally, but the generated project surface is AGILANG-native.
 
 ---
 
@@ -146,31 +172,42 @@ my-ai/
 ├─ agilang.toml
 ├─ .env.example
 ├─ run.agi
+├─ dataset.agi
 ├─ train.agi
 ├─ infer.agi
-├─ dataset.agi
+├─ cnn.agi
+├─ llm.agi
+├─ onnx.agi
+├─ gpu.agi
+├─ distributed.agi
 ├─ benchmark.agi
 ├─ transformer.agi
+├─ app/controllers/AiController.agi
+├─ config/ai.agi
+├─ config/ai.json
+├─ routes/ai.agi
 ├─ src/
 │  ├─ ai_runtime.agi
+│  ├─ dataset.agi
 │  ├─ train.agi
 │  ├─ infer.agi
-│  ├─ dataset.agi
+│  ├─ cnn.agi
+│  ├─ llm.agi
+│  ├─ onnx.agi
+│  ├─ gpu.agi
+│  ├─ distributed.agi
 │  ├─ benchmark.agi
 │  └─ transformer.agi
-├─ config/
-│  └─ ai.json
-├─ resources/views/
-│  └─ dashboard.ags
-├─ storage/
-│  ├─ datasets/
-│  └─ models/
+├─ resources/views/dashboard.ags
+├─ storage/datasets/
+├─ storage/models/
+├─ storage/checkpoints/
 └─ vendor/agilang/        optional vendored runtime
 ```
 
 ---
 
-# AIFlow features
+# AIFlow feature set
 
 ## 1. Dataset engine: AGIRecord
 
@@ -185,33 +222,24 @@ Capabilities:
 
 ```text
 AGIRecord dataset format
+Indexed AGIRecord v2 random access
 save/load
 shuffle
 batch
 split
 summary
-indexed random access
 ```
 
-Python-level test command:
-
-```bash
-python -m pytest tests/test_ai_platform_70.py tests/test_ai_platform_100.py -q
-```
-
-AGI app command:
+Command:
 
 ```bash
 agi run dataset.agi
 ```
 
-Conceptual AGI workflow:
+Tests:
 
-```agi
-fn main() -> i32:
-    print("Create AGIRecord dataset")
-    print("Shuffle, batch, split, and index records")
-    return 0
+```bash
+python -m pytest tests/test_ai_platform_70.py tests/test_ai_platform_100.py -q
 ```
 
 ---
@@ -234,7 +262,7 @@ crop_center
 resize_nearest
 ```
 
-Test:
+Tests:
 
 ```bash
 python -m pytest tests/test_ai_platform_100.py -q
@@ -248,6 +276,7 @@ Files:
 
 ```text
 agilang/ndtensor.py
+agilang/ndtensor_broadcast.py
 agilang/aiflow_native.py
 ```
 
@@ -264,7 +293,7 @@ SGD step
 native dense training
 ```
 
-Test:
+Tests:
 
 ```bash
 python -m pytest tests/test_ndtensor.py tests/test_aiflow_native.py -q
@@ -272,7 +301,7 @@ python -m pytest tests/test_ndtensor.py tests/test_aiflow_native.py -q
 
 ---
 
-## 4. CNN vision kernels
+## 4. CNN vision and training
 
 Files:
 
@@ -280,36 +309,6 @@ Files:
 agilang/vision_kernels.py
 agilang/vision_kernels_v2.py
 agilang/cnn_layers.py
-```
-
-Capabilities:
-
-```text
-single-channel Conv2D
-RGB Conv2D
-multi-filter Conv2D
-ReLU
-MaxPool
-AvgPool
-Flatten
-softmax
-image classifier pipeline
-CNN .agi-model save/load
-```
-
-Test:
-
-```bash
-python -m pytest tests/test_vision_kernels.py tests/test_vision_kernels_v2.py tests/test_cnn_layers.py -q
-```
-
----
-
-## 5. CNN training
-
-Files:
-
-```text
 agilang/conv2d_training.py
 agilang/cnn_optimizers.py
 agilang/conv2d_multichannel_training.py
@@ -321,32 +320,46 @@ agilang/cnn_batch_trainer.py
 Capabilities:
 
 ```text
-Conv2D forward
-Conv2D backward
-MSE loss
-SGD kernel update
-Adam kernel update
-MaxPool backward
-multi-channel Conv2D gradients
-multi-filter Conv2D gradients
-ReLU backward
-Dense classifier backward
-softmax cross-entropy
-full native CNN classifier training loop
-batch trainer
+single-channel Conv2D
+RGB Conv2D
+multi-filter Conv2D
+Conv2D backward gradients
+multi-channel gradients
+multi-filter gradients
+ReLU forward/backward
+MaxPool forward/backward
+Flatten
+Dense classifier
+Softmax cross-entropy
+Adam updates
+full native CNN classifier train_step
+fit loop
+evaluation
 checkpoint helper
+.agi-model save/load
 ```
 
-Run CNN training tests:
+Commands:
 
 ```bash
-python -m pytest tests/test_conv2d_training.py tests/test_cnn_optimizers.py tests/test_conv2d_multichannel_training.py tests/test_cnn_training_loop_v1.py tests/test_cnn_training_loop_v2.py -q
-```
-
-Run generated AGI training entrypoint:
-
-```bash
+agi run cnn.agi
 agi run train.agi
+agi run infer.agi
+```
+
+Tests:
+
+```bash
+python -m pytest \
+  tests/test_vision_kernels.py \
+  tests/test_vision_kernels_v2.py \
+  tests/test_cnn_layers.py \
+  tests/test_conv2d_training.py \
+  tests/test_cnn_optimizers.py \
+  tests/test_conv2d_multichannel_training.py \
+  tests/test_cnn_training_loop_v1.py \
+  tests/test_cnn_training_loop_v2.py \
+  -q
 ```
 
 Complete CNN training pipeline:
@@ -368,7 +381,7 @@ RGB image
 
 ---
 
-## 6. Tokenizer and language model starter
+## 5. Tokenizer and language model starter
 
 Files:
 
@@ -388,32 +401,21 @@ next-token prediction
 .agi-model save/load
 ```
 
-Test:
+Command:
+
+```bash
+agi run llm.agi
+```
+
+Tests:
 
 ```bash
 python -m pytest tests/test_ai_platform_100.py tests/test_ai_final_execution_layer.py -q
 ```
 
-Run generated transformer workflow:
-
-```bash
-agi run transformer.agi
-```
-
-Tiny LLM pipeline:
-
-```text
-text
--> BPE tokenizer
--> token ids
--> token pairs
--> tiny LM training
--> .agi-model
-```
-
 ---
 
-## 7. Transformer runtime
+## 6. Transformer runtime
 
 Files:
 
@@ -435,15 +437,15 @@ feed_forward
 transformer_block
 ```
 
-Test:
+Command:
 
 ```bash
-python -m pytest tests/test_ai_platform_100.py -q
+agi run transformer.agi
 ```
 
 ---
 
-## 8. ONNX Tier 1 reference runtime
+## 7. ONNX Tier 1 reference runtime
 
 File:
 
@@ -466,17 +468,17 @@ Transpose
 Gemm
 ```
 
-Test:
+Command:
 
 ```bash
-python -m pytest tests/test_ai_final_execution_layer.py -q
+agi run onnx.agi
 ```
 
-The ONNX layer is a reference executor for descriptor dictionaries. Full ONNX file parsing and complete operator coverage are future production work.
+Boundary: this is a reference executor for descriptor dictionaries. Full ONNX file parsing and complete operator coverage are production-hardening work.
 
 ---
 
-## 9. GPU runtime planner and kernel registry
+## 8. GPU runtime planner and kernel registry
 
 Files:
 
@@ -496,22 +498,17 @@ CPU fallback
 kernel registry for matmul, conv2d, relu, softmax, attention
 ```
 
-Test:
+Command:
 
 ```bash
-python -m pytest tests/test_ai_platform_100.py tests/test_ai_final_execution_layer.py -q
+agi run gpu.agi
 ```
 
-Important boundary:
-
-```text
-GPU dispatch points exist.
-Production CUDA/ROCm/DirectML/Metal kernels still need hardware-specific implementation.
-```
+Boundary: GPU dispatch points exist. Production CUDA/ROCm/DirectML/Metal kernels still need hardware-specific implementation.
 
 ---
 
-## 10. Distributed training planner and runtime reference
+## 9. Distributed training planner and runtime reference
 
 Files:
 
@@ -523,28 +520,23 @@ agilang/distributed_runtime.py
 Capabilities:
 
 ```text
-training node descriptor
+training node descriptors
 distributed strategy planner
 shard planner
 local allreduce average reference
 ```
 
-Test:
+Command:
 
 ```bash
-python -m pytest tests/test_ai_platform_100.py tests/test_ai_final_execution_layer.py -q
+agi run distributed.agi
 ```
 
-Boundary:
-
-```text
-Local distributed math is implemented.
-Real network transport and multi-node execution are future production work.
-```
+Boundary: local distributed math is implemented. Real network transport and multi-node execution are future production work.
 
 ---
 
-## 11. Benchmarks
+## 10. Benchmarks
 
 File:
 
@@ -560,16 +552,10 @@ benchmark_suite
 compare_reference
 ```
 
-Run benchmark workflow in generated AI app:
+Command:
 
 ```bash
 agi run benchmark.agi
-```
-
-Run tests:
-
-```bash
-python -m pytest tests/test_ai_platform_70.py -q
 ```
 
 ---
@@ -596,6 +582,7 @@ python -m pytest \
   tests/test_ai_platform_70.py \
   tests/test_ai_platform_100.py \
   tests/test_ai_final_execution_layer.py \
+  tests/test_ai_runtime_generator.py \
   -q
 ```
 
@@ -679,22 +666,18 @@ agi chain consensus-replacement-plan --network private-fork --consensus ethereum
 AGILANG web apps should follow a Laravel-style layout:
 
 ```text
-app/
-  controllers/
-config/
-  app.agi
-  auth.agi
-  database.agi
-routes/
-  web.agi
-  api.agi
-resources/views/
-  layout.ags
-  home.ags
-  login.ags
-  register.ags
-  forgot-password.ags
-  reset-password.ags
+app/controllers/
+config/app.agi
+config/auth.agi
+config/database.agi
+routes/web.agi
+routes/api.agi
+resources/views/layout.ags
+resources/views/home.ags
+resources/views/login.ags
+resources/views/register.ags
+resources/views/forgot-password.ags
+resources/views/reset-password.ags
 storage/
 public_html/
 ```
@@ -722,3 +705,23 @@ production LLM checkpointing and serving
 ```
 
 The current system is suitable as a native AGILANG AI framework foundation and CPU reference runtime. Production acceleration comes next.
+
+---
+
+# Critical generated-app rule
+
+Generated AI runtime applications must use AGI entrypoints.
+
+Correct:
+
+```bash
+agi run train.agi
+```
+
+Not the generated app pattern:
+
+```bash
+python train.py
+```
+
+Python can remain an internal host runtime while AGILANG matures toward native/C/GPU execution, but generated project files must be AGI-native.
