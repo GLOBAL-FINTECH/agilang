@@ -30,7 +30,7 @@ def conv2d_multi_filter(image: Sequence[Sequence[Sequence[float]]], kernels: Seq
 def cnn_multi_filter_features(image: Sequence[Sequence[Sequence[float]]], kernels: Sequence[Sequence[Sequence[Sequence[float]]]], biases: Sequence[float] | None = None, pool_size: int = 2) -> dict[str, Any]:
     """Run multi-filter Conv2D -> ReLU -> MaxPool -> Flatten."""
     feature_maps = conv2d_multi_filter(image, kernels, biases=biases)
-    activated = [relu_image fmap for fmap in feature_maps]
+    activated = [relu_image(fmap) for fmap in feature_maps]
     pooled = [maxpool2d(fmap, pool_size=pool_size) if fmap else [] for fmap in activated]
     features: list[float] = []
     for fmap in pooled:
