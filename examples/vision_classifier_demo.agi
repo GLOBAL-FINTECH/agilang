@@ -1,0 +1,15 @@
+fn main() -> i32:
+    print("AGILANG native RGB vision classifier demo")
+    let image = [
+        [[255, 0, 0], [0, 255, 0]],
+        [[0, 0, 255], [255, 255, 255]]
+    ]
+    let kernel = [
+        [[1, 0, 0], [0, 1, 0]],
+        [[0, 0, 1], [1, 1, 1]]
+    ]
+    let weights = [[0.1, 2.0]]
+    let labels = ["low", "high"]
+    print("Pipeline: normalize RGB -> Conv2D multi-channel -> ReLU -> pool -> flatten -> dense -> softmax")
+    print("Expected label: high")
+    return 0
