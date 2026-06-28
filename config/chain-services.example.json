@@ -1,0 +1,33 @@
+{
+  "profile": "production",
+  "mode": "inhouse-production",
+  "services": {
+    "node": {
+      "enabled": true
+    },
+    "rpc": {
+      "enabled": true,
+      "host": "127.0.0.1",
+      "port": 8545,
+      "auto_mine": false,
+      "dev_send": false
+    },
+    "validator": {
+      "enabled": true,
+      "mode": "inhouse",
+      "slot_seconds": 1,
+      "produce_empty_blocks": true,
+      "key_file": "config/validator-keys.json"
+    },
+    "beacon": {
+      "enabled": true,
+      "mode": "inhouse",
+      "config": "config/beacon.json",
+      "db_path": "storage/beacon.sqlite",
+      "slot_seconds": 1
+    },
+    "dev": {
+      "enabled": false
+    }
+  }
+}
