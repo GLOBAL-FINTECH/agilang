@@ -1,0 +1,9 @@
+{
+  "chain_id": 1923,
+  "network": "sbq-beacon",
+  "consensus": "sbq-beacon",
+  "slot_seconds": 1,
+  "slots_per_epoch": 16,
+  "finality_threshold": 0.6666666667,
+  "min_validator_stake": 1000
+}
