@@ -1,0 +1,34 @@
+{
+  "host": "127.0.0.1",
+  "port": 8545,
+  "cors_origin": "http://127.0.0.1:3000",
+  "rate_limit_per_minute": 1200,
+  "max_body_bytes": 1048576,
+  "auto_mine": false,
+  "dev_send": false,
+  "db_path": "storage/chain.sqlite",
+  "node_id": "inhouse-rpc-node",
+  "chain": {
+    "chain_id": 1923,
+    "name": "AGILANG Smart Chain",
+    "consensus_mode": "pos",
+    "mainnet_profile": true,
+    "require_block_signatures": true,
+    "strict_accounting": true,
+    "enforce_nonce_order": true,
+    "max_account_queue_gap": 128,
+    "mempool_min_gas_price": 1,
+    "slot_seconds": 1,
+    "finality_depth": 8,
+    "validators": {
+      "0x04aac0173878aee604c1eaec3455ca8b5719f39b": 40,
+      "0x95e3673f703cb53b3c1848cd3def70a64c59fb08": 35,
+      "0x42753c26f7ef0deedcd27967b34ed48b294e1443": 25
+    },
+    "validator_signing_key_file": "config/validator-keys.json",
+    "genesis_state": {
+      "balances": {},
+      "nonces": {}
+    }
+  }
+}
