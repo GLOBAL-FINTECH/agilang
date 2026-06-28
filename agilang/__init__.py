@@ -21,6 +21,9 @@ from .interop import python_package, python_package_status, native_library, capa
 from .zk import zk_capabilities, zk_field, zk_circuit, zk_commit, zk_verify_commitment as zk_verify_commit, zk_merkle_tree, zk_merkle_proof, zk_verify_merkle_proof, zk_nullifier, zk_schnorr_keypair, zk_schnorr_prove, zk_schnorr_verify, zk_bridge_status, zk_external_engine, zk_demo_payload
 
 from .blockchain import blockchain_capabilities, blockchain_config, blockchain_mainnet_config, blockchain_transaction, blockchain_merkle_root, blockchain_node, blockchain_devnet, blockchain_consensus_simulation, blockchain_demo, consensus_engine, pos_consensus_engine, dpos_consensus_engine, dev_consensus_engine, BlockchainNode, BlockchainConfig, ProofOfStakeEngine, DelegatedProofOfStakeEngine, DevConsensusEngine, Mempool, ChainDatabase
+from .blockchain_nonce_mempool_patch import apply_blockchain_nonce_mempool_patch
+apply_blockchain_nonce_mempool_patch()
+from .blockchain import blockchain_capabilities, blockchain_config, blockchain_mainnet_config, blockchain_transaction, blockchain_merkle_root, blockchain_node, blockchain_devnet, blockchain_consensus_simulation, blockchain_demo, consensus_engine, pos_consensus_engine, dpos_consensus_engine, dev_consensus_engine, BlockchainNode, BlockchainConfig, ProofOfStakeEngine, DelegatedProofOfStakeEngine, DevConsensusEngine, Mempool, ChainDatabase
 
 from .ai_platform import ai_capabilities, ai_deployment_gate, require_ai_capability
 from .bpe_tokenizer import BPETokenizer, train_bpe_tokenizer, load_bpe_tokenizer
@@ -161,6 +164,7 @@ __all__ = [
     "WorkerSpec",
     "distributed_runtime",
     "distributed_capabilities",
+    "apply_blockchain_nonce_mempool_patch",
 ]
 
 from .ml import *
