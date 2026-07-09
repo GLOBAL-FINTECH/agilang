@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AGILANG Suno Music Studio</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero panel">
+        <div>
+          <p class="eyebrow">AGILANG AI Music App</p>
+          <h1>Suno Music Studio</h1>
+          <p class="lead">
+            Generate songs, upload or record audio for remix/cover, edit lyrics, choose a genre, poll results,
+            download tracks, and split vocals/instruments from completed Suno tracks.
+          </p>
+        </div>
+        <div class="status-card">
+          <span id="healthDot" class="dot"></span>
+          <div>
+            <strong id="healthText">Checking backend…</strong>
+            <small>API key stays on the backend.</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid two">
+        <form id="studioForm" class="panel form-card">
+          <h2>Create or Remix</h2>
+
+          <label>
+            Workflow
+            <select id="sourceMode" name="sourceMode">
+              <option value="text">Text / lyrics to full song</option>
+              <option value="upload-cover">Upload or record audio → cover/remix</option>
+              <option value="upload-extend">Upload or record audio → extend song</option>
+            </select>
+          </label>
+
+          <div id="uploadPanel" class="upload-box hidden">
+            <label>
+              Upload audio file
+              <input id="audioFile" type="file" accept="audio/*" />
+            </label>
+            <div class="record-row">
+              <button id="recordBtn" type="button" class="secondary">Start Recording</button>
+              <button id="stopBtn" type="button" class="secondary" disabled>Stop</button>
+              <audio id="recordPreview" controls class="hidden"></audio>
+            </div>
+            <button id="uploadBtn" type="button">Upload to temporary file API</button>
+            <p id="uploadResult" class="mini muted">No upload yet.</p>
+          </div>
+
+          <label>
+            Song title
+            <input id="title" name="title" value="GTiPay Afro Fusion" maxlength="100" />
+          </label>
+
+          <label>
+            Genre / music type
+            <input id="genre" name="genre" value="Afrobeat, Rumba, Lumba, modern Zambian gospel influence" maxlength="1000" />
+          </label>
+
+          <label>
+            Mood / direction
+            <input id="mood" name="mood" placeholder="uplifting, danceable, emotional, romantic, worship, cinematic…" />
+          </label>
+
+          <label>
+            Lyrics editor
+            <textarea id="lyrics" name="lyrics" rows="9" placeholder="Write or paste original lyrics here. In custom mode, Suno uses this as exact lyrics when instrumental is off."></textarea>
+          </label>
+
+          <label>
+            Prompt / arrangement instruction
+            <textarea id="prompt" name="prompt" rows="4" placeholder="Example: Create an Afrobeat and rumba remix with warm guitars, soft percussion, male vocal, catchy chorus."></textarea>
+          </label>
+
+          <div class="grid two compact">
+            <label>
+              Model
+              <select id="model" name="model">
+                <option>V5_5</option>
+                <option>V5</option>
+                <option>V4_5PLUS</option>
+                <option selected>V4_5ALL</option>
+                <option>V4_5</option>
+                <option>V4</option>
+              </select>
+            </label>
+
+            <label>
+              Vocal gender
+              <select id="vocalGender" name="vocalGender">
+                <option value="">Auto</option>
+                <option value="m">Male</option>
+                <option value="f">Female</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="checks">
+            <label><input id="customMode" type="checkbox" checked /> Custom mode</label>
+            <label><input id="instrumental" type="checkbox" /> Instrumental only</label>
+            <label><input id="rightsConfirmed" type="checkbox" /> I own or have permission to use the audio/lyrics.</label>
+          </div>
+
+          <details>
+            <summary>Advanced controls</summary>
+            <label>
+              Negative tags
+              <input id="negativeTags" placeholder="Heavy metal, distorted vocals, noisy drums…" />
+            </label>
+            <div class="grid three compact">
+              <label>Style weight <input id="styleWeight" type="number" min="0" max="1" step="0.05" placeholder="0.65" /></label>
+              <label>Weirdness <input id="weirdnessConstraint" type="number" min="0" max="1" step="0.05" placeholder="0.35" /></label>
+              <label>Audio weight <input id="audioWeight" type="number" min="0" max="1" step="0.05" placeholder="0.65" /></label>
+            </div>
+          </details>
+
+          <div class="actions">
+            <button type="submit">Generate Music</button>
+            <button id="boostStyleBtn" type="button" class="secondary">Boost Style</button>
+          </div>
+        </form>
+
+        <section class="panel results-card">
+          <h2>Results</h2>
+          <div class="task-row">
+            <input id="taskId" placeholder="Task ID will appear here" />
+            <button id="pollBtn" type="button" class="secondary">Poll</button>
+          </div>
+          <div id="results" class="results muted">No generation yet.</div>
+
+          <hr />
+
+          <h3>Refine / post-production</h3>
+          <p class="mini muted">After generation succeeds, copy an audio ID from the result and split vocals/instruments.</p>
+          <div class="task-row">
+            <input id="audioId" placeholder="audioId from generated result" />
+          </div>
+          <div class="grid two compact">
+            <label>
+              Stem mode
+              <select id="stemType">
+                <option value="separate_vocal">Vocals + instrumental</option>
+                <option value="split_stem">Up to 12 stems</option>
+                <option value="split_stem_advanced">Specific instrument</option>
+              </select>
+            </label>
+            <label>
+              Instrument
+              <select id="stemName">
+                <option value="Lead Vocal">Lead Vocal</option>
+                <option value="Drum Kit">Drum Kit</option>
+                <option value="Bass">Bass</option>
+                <option value="Piano">Piano</option>
+                <option value="Guitar">Guitar</option>
+                <option value="Electric Guitar">Electric Guitar</option>
+                <option value="Synth">Synth</option>
+                <option value="Percussion">Percussion</option>
+                <option value="String Section">String Section</option>
+                <option value="Brass Section">Brass Section</option>
+                <option value="Woodwinds">Woodwinds</option>
+              </select>
+            </label>
+          </div>
+          <div class="actions">
+            <button id="stemBtn" type="button">Split Stems</button>
+            <button id="lyricsBtn" type="button" class="secondary">Timestamp Lyrics</button>
+            <button id="midiBtn" type="button" class="secondary">Generate MIDI</button>
+          </div>
+          <div class="task-row">
+            <input id="stemTaskId" placeholder="Stem/MIDI task ID" />
+            <button id="pollStemBtn" type="button" class="secondary">Poll Stem</button>
+          </div>
+          <div id="stemResults" class="results muted">No stem job yet.</div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/assets/app.js"></script>
+  </body>
+</html>
