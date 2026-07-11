@@ -14,6 +14,8 @@ from .security import security_headers, rate_limit, body_limit
 from .hybrid_runtime import HybridWebRuntime, NativeNetRuntime, hybrid_web_runtime, native_web_runtime, native_runtime_status, native_runtime_available, native_prebuilt_status, native_prebuilt_runtime_install, native_platform_matrix, agilab_web_runtime, agilab_native_runtime
 from .cgi_runtime import discover_shared_hosting, shared_hosting_capabilities, write_shared_hosting_files, run_cgi, run_fastcgi
 from .mobile_runtime import mobile_runtime_matrix, mobile_runtime_capabilities, mobile_runtime_doctor, create_mobile_native_bridge
+from .http_query import HTTPClient, HTTPQueryError, HTTPResponse, http_get, http_post
+from .audio_reader import AudioReader, AudioReaderError, NarrationRequest, RemoteVoiceProvider, VoiceConsent, VoiceProfile, browser_speech_script
 
 from .lowlevel_network import tcp_listen, tcp_connect, udp_socket, packet_frame, packet_unframe, packet_json, packet_json_parse, gossip_node, lowlevel_network_capabilities
 from .evm import evm_capabilities, evm_keccak, evm_function_selector, evm_abi_encode, evm_abi_decode, evm_contract_call_data, evm_bytecode_builder, evm_disassemble, evm_execute, evm_simulate_call, evm_estimate_gas, evm_trace, evm_world_state, evm_interpreter, evm_rpc, evm_rlp_encode, evm_legacy_unsigned_tx, evm_external_engine
@@ -113,6 +115,18 @@ __all__ = [
     "run_cgi",
     "run_fastcgi",
     "create_mobile_native_bridge",
+    "HTTPClient",
+    "HTTPQueryError",
+    "HTTPResponse",
+    "http_get",
+    "http_post",
+    "AudioReader",
+    "AudioReaderError",
+    "NarrationRequest",
+    "RemoteVoiceProvider",
+    "VoiceConsent",
+    "VoiceProfile",
+    "browser_speech_script",
     "BeaconConfig",
     "BeaconState",
     "BeaconStore",
