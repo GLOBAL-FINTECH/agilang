@@ -26,8 +26,8 @@ ai-gpu = ["pillow", "onnx", "onnxruntime-gpu"]
 dev = ["pytest", "bandit[toml]", "pip-audit", "ruff"]
 
 [project.scripts]
-agilang = "agilang.cli_runtime:main"
-agi = "agilang.cli_runtime:main"
+agilang = "agilang.smart_chain_cli:main"
+agi = "agilang.smart_chain_cli:main"
 
 [tool.setuptools]
 packages = ["agilang", "agilang.native"]
