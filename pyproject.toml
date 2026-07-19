@@ -28,6 +28,7 @@ dev = ["pytest", "bandit[toml]", "pip-audit", "ruff"]
 [project.scripts]
 agilang = "agilang.cli_runtime:main"
 agi = "agilang.cli_runtime:main"
+agi-stripe-connect = "agilang.stripe_connect_server:main"
 
 [tool.setuptools]
 packages = ["agilang", "agilang.native"]
