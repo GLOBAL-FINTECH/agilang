@@ -1,4 +1,4 @@
-from .cli_runtime import main
+from .smart_chain_cli import main
 
 if __name__ == "__main__":
     main()
