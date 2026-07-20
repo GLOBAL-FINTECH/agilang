@@ -7,7 +7,11 @@ import time
 import urllib.request
 from pathlib import Path
 
-from agilang.blockchain_runtime_gateway import generate_blockchain_app, rpc_supported_methods, serve_project_rpc
+from agilang.blockchain_runtime_gateway import (
+    generate_blockchain_app,
+    rpc_supported_methods,
+    serve_project_rpc,
+)
 
 
 def free_port() -> int:
@@ -17,7 +21,9 @@ def free_port() -> int:
 
 
 def rpc(port: int, method: str, params=None, request_id: int = 1):
-    payload = json.dumps({"jsonrpc": "2.0", "method": method, "params": params or [], "id": request_id}).encode()
+    payload = json.dumps(
+        {"jsonrpc": "2.0", "method": method, "params": params or [], "id": request_id}
+    ).encode()
     req = urllib.request.Request(
         f"http://127.0.0.1:{port}",
         data=payload,
@@ -29,7 +35,11 @@ def rpc(port: int, method: str, params=None, request_id: int = 1):
 
 
 def start_rpc(root: Path, port: int) -> threading.Thread:
-    thread = threading.Thread(target=serve_project_rpc, args=(root, "127.0.0.1", port), daemon=True)
+    thread = threading.Thread(
+        target=serve_project_rpc,
+        args=(root, "127.0.0.1", port),
+        daemon=True,
+    )
     thread.start()
     for _ in range(50):
         try:
@@ -40,10 +50,11 @@ def start_rpc(root: Path, port: int) -> threading.Thread:
     raise AssertionError("RPC server did not start")
 
 
-def test_supported_rpc_method_catalog_is_metamask_compatible():
+def test_supported_rpc_method_catalog_is_truthful_and_signed_raw_only():
     methods = set(rpc_supported_methods())
     required = {
         "web3_clientVersion",
+        "web3_sha3",
         "net_version",
         "net_listening",
         "eth_chainId",
@@ -52,19 +63,36 @@ def test_supported_rpc_method_catalog_is_metamask_compatible():
         "eth_getBalance",
         "eth_getTransactionCount",
         "eth_gasPrice",
-        "eth_estimateGas",
         "eth_getBlockByNumber",
         "eth_getBlockByHash",
         "eth_getTransactionByHash",
         "eth_getTransactionReceipt",
-        "eth_sendTransaction",
         "eth_sendRawTransaction",
         "rpc_modules",
     }
     assert required.issubset(methods)
+    assert "eth_sendTransaction" not in methods
+    assert "dev_sendTransaction" not in methods
+    assert "sbq_sendTransaction" not in methods
+    assert "eth_call" not in methods
+    assert "eth_estimateGas" not in methods
+    assert "eth_getLogs" not in methods
 
 
-def test_rpc_methods_work_against_generated_chain(tmp_path: Path):
+def test_generated_rpc_config_defaults_to_secure_public_behavior(tmp_path: Path):
+    generated = generate_blockchain_app("secure rpc defaults", tmp_path, force=True)
+    config = json.loads(
+        (Path(generated["root"]) / "config" / "rpc.json").read_text(encoding="utf-8")
+    )
+    assert config["dev_send"] is False
+    assert config["auto_mine"] is False
+    assert config["cors_origin"] == ""
+    assert config["max_batch_size"] == 20
+    assert config["public_write_method"] == "eth_sendRawTransaction"
+    assert config["security_profile"] == "signed-raw-only"
+
+
+def test_rpc_read_methods_and_security_failures(tmp_path: Path):
     generated = generate_blockchain_app("rpc coverage", tmp_path, force=True)
     root = Path(generated["root"])
     port = free_port()
@@ -75,35 +103,52 @@ def test_rpc_methods_work_against_generated_chain(tmp_path: Path):
     assert rpc(port, "net_listening")["result"] is True
     assert rpc(port, "eth_syncing")["result"] is False
     assert rpc(port, "eth_blockNumber")["result"].startswith("0x")
-    accounts = rpc(port, "eth_accounts")["result"]
-    assert accounts
-    sender, receiver = accounts[0], accounts[1]
-    assert rpc(port, "eth_getBalance", [sender, "latest"])["result"].startswith("0x")
-    assert rpc(port, "eth_getTransactionCount", [sender, "latest"])["result"].startswith("0x")
+    assert rpc(port, "eth_accounts")["result"] == []
     assert rpc(port, "eth_gasPrice")["result"] == "0x1"
-    assert rpc(port, "eth_estimateGas", [{"from": sender, "to": receiver, "value": "0x1"}])["result"].startswith("0x")
 
-    sent = rpc(port, "eth_sendTransaction", [{"from": sender, "to": receiver, "value": "0x1", "gasPrice": "0x1"}])
-    assert "result" in sent, sent
-    tx_hash = sent["result"]
-    assert tx_hash
+    # Ethereum Keccak-256 of empty bytes, not NIST SHA3-256.
+    assert (
+        rpc(port, "web3_sha3", ["0x"])["result"]
+        == "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+    )
 
-    assert int(rpc(port, "eth_blockNumber")["result"], 16) >= 1
+    unsigned = rpc(
+        port,
+        "eth_sendTransaction",
+        [
+            {
+                "from": "0x04aac0173878aee604c1eaec3455ca8b5719f39b",
+                "to": "0x95e3673f703cb53b3c1848cd3def70a64c59fb08",
+                "value": "0x1",
+            }
+        ],
+    )
+    assert unsigned["error"]["code"] == -32000
+    assert "eth_sendRawTransaction" in unsigned["error"]["message"]
+
+    fake_call = rpc(
+        port,
+        "eth_call",
+        [{"to": "0x0000000000000000000000000000000000000001", "data": "0x1234"}, "latest"],
+    )
+    fake_estimate = rpc(
+        port,
+        "eth_estimateGas",
+        [{"to": "0x0000000000000000000000000000000000000001"}],
+    )
+    fake_logs = rpc(port, "eth_getLogs", [{}])
+    assert fake_call["error"]["code"] == -32601
+    assert fake_estimate["error"]["code"] == -32601
+    assert fake_logs["error"]["code"] == -32601
+
     latest = rpc(port, "eth_getBlockByNumber", ["latest", True])["result"]
     assert latest["hash"]
-    assert latest["transactions"]
+    assert latest["transactions"] == []
     assert rpc(port, "eth_getBlockByHash", [latest["hash"], False])["result"]["hash"] == latest["hash"]
-    assert int(rpc(port, "eth_getBlockTransactionCountByNumber", ["latest"])["result"], 16) >= 1
-    assert int(rpc(port, "eth_getBlockTransactionCountByHash", [latest["hash"]])["result"], 16) >= 1
-
-    tx = rpc(port, "eth_getTransactionByHash", [tx_hash])["result"]
-    assert tx["hash"] == tx_hash
-    receipt = rpc(port, "eth_getTransactionReceipt", [tx_hash])["result"]
-    assert receipt["transactionHash"] == tx_hash
-    assert receipt["status"] == "0x1"
-    assert rpc(port, "eth_getLogs", [{}])["result"] == []
+    assert rpc(port, "eth_getBlockTransactionCountByNumber", ["latest"])["result"] == "0x0"
+    assert rpc(port, "eth_getBlockTransactionCountByHash", [latest["hash"]])["result"] == "0x0"
     assert "eth" in rpc(port, "rpc_modules")["result"]
-    assert "eth_chainId" in rpc(port, "sbq_supportedMethods")["result"]
+    assert "eth_sendRawTransaction" in rpc(port, "sbq_supportedMethods")["result"]
 
 
 def test_rpc_batch_requests_work(tmp_path: Path):
@@ -111,10 +156,12 @@ def test_rpc_batch_requests_work(tmp_path: Path):
     root = Path(generated["root"])
     port = free_port()
     start_rpc(root, port)
-    payload = json.dumps([
-        {"jsonrpc": "2.0", "method": "eth_chainId", "params": [], "id": 1},
-        {"jsonrpc": "2.0", "method": "net_listening", "params": [], "id": 2},
-    ]).encode()
+    payload = json.dumps(
+        [
+            {"jsonrpc": "2.0", "method": "eth_chainId", "params": [], "id": 1},
+            {"jsonrpc": "2.0", "method": "net_listening", "params": [], "id": 2},
+        ]
+    ).encode()
     req = urllib.request.Request(
         f"http://127.0.0.1:{port}",
         data=payload,
